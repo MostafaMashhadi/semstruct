@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+title: SemStruct
+message: If you use this software, please cite it and the Coffman and Weaver benchmark.
+type: software
+authors:
+  - family-names: Mashhadizadeh
+    given-names: Mostafa
+version: 0.1.0
+license: MIT
+date-released: 2026-11-14
+repository-code: https://github.com/MostafaMashhadi/semstruct
