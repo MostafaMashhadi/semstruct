@@ -133,6 +133,7 @@ The gold relations and keyword attributes are the top five. Cells that repeat a 
 | [Training](docs/training.md) | Query classes, labels, leakage rules, objective, and metrics |
 | [Reproduction](docs/reproduction.md) | macOS, Windows, Linux, and CUDA install paths |
 | [Reference run](docs/logs/2026-11-14-reference-run.md) | Commands, epoch metrics, and the full trainer step log |
+| [Slides](docs/slides/semstruct-progress.md) | Short Marp deck of what this version implements |
 
 ## Layout
 
