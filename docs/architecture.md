@@ -52,6 +52,6 @@ A query-class score is the mean relevance probability of the class's relations a
 
 ## What this version evaluates
 
-The experiments measure the classifier: pair classification, ranking of the paired candidates, ranking of schema elements, and ranking of query classes on held-out synthetic queries. On the Coffman topics they also measure whether the relations of the judged tuples are ranked above other relations.
+The experiments measure the classifier: pair classification, ranking of the paired candidates, ranking of schema elements, and ranking of query classes. The test queries are a mix of held-out synthetic queries and one third of the Coffman topics. The other two thirds of the topics are training and validation pairs. On the held-out topics the run also measures whether the relations of the judged tuples are ranked above other relations. Every split contains relation, attribute, and value pairs. These three dumps have no relation comments, so a description is not a separate sample.
 
 They do not measure candidate-network workload or end-to-end retrieval time. Those measurements wait on the network generator.

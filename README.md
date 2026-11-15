@@ -25,10 +25,28 @@ For Mondial, the IMDb 2009 subset, and the Wikipedia 2008 subset:
 1. Load the PostgreSQL benchmark dump into SQLite.
 2. Build query classes from the foreign-key graph.
 3. Sample keyword queries from the cell values of each class.
-4. Fine-tune `distilbert/distilbert-base-uncased` as a relevance classifier.
-5. Compare it with token overlap and with frozen DistilBERT embeddings.
+4. Add the 50 Coffman topics. One third is test data. The other two thirds are train and validation data.
+5. Fine-tune `distilbert/distilbert-base-uncased` as a relevance classifier.
+6. Compare it with token overlap and with frozen DistilBERT embeddings.
 
-The 50 Coffman and Weaver topics for each database are held out of training. They are an external relation-ranking check and a qualitative report.
+Each pair is one query beside one element. The element is a relation name, an attribute, or a cell value. These dumps have no relation comments, so there is no separate description sample. A comment in another dump would be a line on the relation card, not a fourth label. Positives and negatives are counted separately below. The same three categories appear in train, validation, and test, for both the synthetic queries and the Coffman topics.
+
+| Database | Category | Positive | Negative | Total |
+| --- | --- | ---: | ---: | ---: |
+| Mondial | Relation | 3,022 | 77 | 3,099 |
+| Mondial | Attribute | 2,433 | 329 | 2,762 |
+| Mondial | Value | 2,505 | 23,474 | 25,979 |
+| Mondial | All | 7,960 | 23,880 | 31,840 |
+| IMDb | Relation | 682 | 18 | 700 |
+| IMDb | Attribute | 578 | 92 | 670 |
+| IMDb | Value | 604 | 5,482 | 6,086 |
+| IMDb | All | 1,864 | 5,592 | 7,456 |
+| Wikipedia | Relation | 453 | 16 | 469 |
+| Wikipedia | Attribute | 374 | 65 | 439 |
+| Wikipedia | Value | 442 | 3,726 | 4,168 |
+| Wikipedia | All | 1,269 | 3,807 | 5,076 |
+
+The Coffman portion of those totals is 1,840 pairs on Mondial, 1,076 on IMDb, and 1,244 on Wikipedia. On every database the 50 topics split into 29 train, 4 validation, and 17 test.
 
 ## Data
 
@@ -39,13 +57,13 @@ The three databases are the evaluation subsets of the Coffman and Weaver relatio
 
 `semstruct download` fetches the Mondial, IMDb 2009 subset, and Wikipedia 2008 subset schema, data, and topic files from that Dataverse record and checks their MD5 sums. IMDb topics are the corrected V2 assessments. The benchmark is academic and non-commercial. IMDb rows remain courtesy of IMDb. This repository's MIT license covers the code only. Filenames, checksums, and the manual download list are in [docs/datasets.md](docs/datasets.md).
 
-Test-set pair classification from the [14 November 2026 reference run](docs/logs/2026-11-14-reference-run.md), Apple Silicon, MPS:
+Test-set pair classification after the 15 November 2026 retraining, Apple Silicon, MPS. The test split mixes held-out synthetic queries with 17 Coffman topics. The [14 November log](docs/logs/2026-11-14-reference-run.md) is the earlier run, before those topics were added to the pairs.
 
 | Database | Pairs used to train | Validation F1 | Test F1 | Test ROC-AUC |
 | --- | ---: | ---: | ---: | ---: |
-| Mondial | 24,064 | 0.873 | 0.876 | 0.984 |
-| IMDb | 5,088 | 0.979 | 0.968 | 0.998 |
-| Wikipedia | 3,060 | 0.943 | 0.926 | 0.992 |
+| Mondial | 25,108 | 0.862 | 0.861 | 0.975 |
+| IMDb | 5,692 | 0.973 | 0.909 | 0.984 |
+| Wikipedia | 3,816 | 0.912 | 0.927 | 0.988 |
 
 ## Quick start
 
@@ -102,25 +120,24 @@ for score, row in sorted(zip(scores, pairs), key=lambda item: -item[0]):
     print(f"{score:.3f}  {row['label']}  {row['element_id']}")
 ```
 
-`q00029` is the held-out Mondial query `montevideo uruguay`, from the class `borders`, `city`, and `country`. Seven of its 28 pairs are relevant. The validation cutoff in `outputs/mondial/metrics.json` is 0.706. The reference checkpoint ranks them as follows.
+`q00029` is the held-out Mondial query `montevideo uruguay`, from the class `borders`, `city`, and `country`. Seven of its 28 pairs are relevant. The validation cutoff in `outputs/mondial/metrics.json` is 0.553. The current checkpoint ranks them as follows.
 
 | Score | Label | Element |
 | ---: | ---: | --- |
-| 0.996 | relevant | relation `city` |
-| 0.996 | relevant | relation `country` |
-| 0.995 | relevant | relation `borders` |
-| 0.994 | relevant | attribute `city.name` |
-| 0.989 | relevant | attribute `country.province` |
-| 0.910 | relevant | value `city.name = montevideo` |
-| 0.908 | irrelevant | value `country.capital = montevideo` |
-| 0.883 | irrelevant | value `geo_river.river = uruguay` |
-| 0.800 | irrelevant | value `country.name = uruguay` |
-| 0.741 | irrelevant | value `river.name = uruguay` |
-| 0.687 | relevant | value `country.province = uruguay` |
-| 0.399 | irrelevant | value `geo_river.province = uruguay` |
-| 0.061 and below | irrelevant | values that do not contain either keyword |
+| 0.998 | relevant | relation `country` |
+| 0.997 | relevant | relation `city` |
+| 0.997 | relevant | relation `borders` |
+| 0.997 | relevant | attribute `country.province` |
+| 0.997 | relevant | attribute `city.name` |
+| 0.937 | irrelevant | value `country.capital = montevideo` |
+| 0.934 | relevant | value `city.name = montevideo` |
+| 0.900 | relevant | value `country.province = uruguay` |
+| 0.880 | irrelevant | value `country.name = uruguay` |
+| 0.477 | irrelevant | value `geo_river.river = uruguay` |
+| 0.216 | irrelevant | value `geo_river.province = uruguay` |
+| 0.006 and below | irrelevant | values that do not contain either keyword |
 
-The gold relations and keyword attributes are the top five. Cells that repeat a keyword without having generated the query also score high. Cells with neither keyword fall to about 0. The same cutoff is 0.504 for IMDb and 0.577 for Wikipedia, at `systems.distilbert.test.classification.threshold`.
+The gold relations and keyword attributes are the top five. A cell that repeats a keyword without having generated the query can rank beside a gold cell. Cells with neither keyword fall below 0.01. The same cutoff is 0.063 for IMDb and 0.917 for Wikipedia, at `systems.distilbert.test.classification.threshold`.
 
 `keyword_relevance` adds a probability for each whitespace-separated keyword. `query_class_score` is the mean probability of a class's relations and text attributes.
 

@@ -55,7 +55,7 @@ semstruct evaluate --dataset all
 
 `train --overfit-check` memorizes one batch of 16 pairs for 30 steps at learning rate `1e-4`, with dropout disabled, and writes `outputs/<dataset>/overfit_check.json`. The loss has to fall. The check then continues into the real fine-tune, which uses the learning rate in `configs/default.yaml`.
 
-`prepare --rebuild` reloads SQLite from the dumps. Without `--rebuild`, an existing `data/processed/<dataset>/database.sqlite` is reused.
+`prepare --rebuild` reloads SQLite from the dumps. Without `--rebuild`, an existing `data/processed/<dataset>/database.sqlite` is reused. Prepare writes relation, attribute, and value counts, with positives and negatives separate, to `prepare_stats.json`. It also assigns the 50 Coffman topics: 17 to test, 29 to train, and 4 to validation.
 
 ## Outputs
 

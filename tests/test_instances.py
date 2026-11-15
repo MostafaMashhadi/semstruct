@@ -3,7 +3,14 @@ from pathlib import Path
 
 from semstruct.data.dump import load_sqlite
 from semstruct.data.elements import normalize_text
-from semstruct.data.instances import assign_splits, build_instances, sample_example_values
+from semstruct.data.instances import (
+    assign_splits,
+    assign_topic_splits,
+    build_instances,
+    build_topic_instances,
+    sample_example_values,
+)
+from semstruct.data.topics import Topic
 from semstruct.data.query_classes import select_query_classes
 
 SCHEMA = """
@@ -82,6 +89,52 @@ def _build(tmp_path: Path):
     )
     connection.close()
     return schema, classes, queries, pairs
+
+
+def test_one_third_of_topics_are_held_for_test():
+    topic_ids = [str(index) for index in range(1, 51)]
+    splits = assign_topic_splits(topic_ids, seed=42, train_ratio=0.8, val_ratio=0.1)
+    assert set(splits) == set(topic_ids)
+    assert sum(split == "test" for split in splits.values()) == 17
+    assert sum(split != "test" for split in splits.values()) == 33
+    assert set(splits.values()) == {"train", "validation", "test"}
+
+
+def test_coffman_topic_becomes_relation_attribute_and_value_pairs(tmp_path: Path):
+    schema_path = tmp_path / "schema.sql"
+    data_path = tmp_path / "data.sql"
+    schema_path.write_text(SCHEMA, encoding="utf-8")
+    data_path.write_text(DATA, encoding="utf-8")
+    database = tmp_path / "mini.sqlite"
+    schema = load_sqlite(schema_path, data_path, database)
+    connection = sqlite3.connect(database)
+    sampled = sample_example_values(connection, schema, 10, 80, __import__("random").Random(3))
+    examples = {key: values[:5] for key, values in sampled.items()}
+    topics = [
+        Topic(topic_id="1", query="france", search_ids=[2]),
+        Topic(topic_id="2", query="switzerland", search_ids=[1]),
+        Topic(topic_id="3", query="rhine", search_ids=[6]),
+    ]
+    queries, pairs, _stats, splits = build_topic_instances(
+        connection,
+        schema,
+        topics,
+        examples,
+        sampled,
+        CONFIG,
+    )
+    connection.close()
+    assert set(splits.values()) == {"train", "validation", "test"}
+    assert sum(split == "test" for split in splits.values()) == 1
+    france = next(query for query in queries if query["query"] == "france")
+    assert france["source"] == "coffman"
+    france_pairs = [pair for pair in pairs if pair["query_id"] == france["query_id"]]
+    positives = {(pair["element_type"], pair["label"]) for pair in france_pairs}
+    assert ("relation", 1) in positives
+    assert ("attribute", 1) in positives
+    assert ("value", 1) in positives
+    assert any(pair["label"] == 0 for pair in france_pairs)
+    assert {pair["split"] for pair in france_pairs} == {france["split"]}
 
 
 def test_splits_are_query_disjoint():

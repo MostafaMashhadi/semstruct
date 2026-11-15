@@ -11,13 +11,16 @@ from contextlib import contextmanager
 from typing import Iterator
 
 from semstruct.data.elements import (
+    STOPWORDS,
     attribute_element_id,
     attribute_text,
+    conflicts_with_keywords,
     content_tokens,
     keyword_from_value,
     normalize_text,
     relation_element_id,
     relation_text,
+    tokenize,
     value_element_id,
     value_text,
 )
@@ -104,6 +107,7 @@ def build_instances(
             query_record = {
                 "query_id": query_id,
                 "query": query,
+                "source": "synthetic",
                 "class_id": class_id,
                 "relations": list(relations),
                 "keyword_attributes": list(keyword_attributes),
@@ -177,6 +181,182 @@ def assign_splits(query_ids: list[str], seed: int, train_ratio: float, val_ratio
         else:
             splits[query_id] = "test"
     return splits
+
+
+def assign_topic_splits(topic_ids: list[str], seed: int, train_ratio: float, val_ratio: float) -> dict[str, str]:
+    """Put one third of the Coffman topics in test and the other two thirds in train or validation.
+
+    The two-thirds portion keeps the same train-to-validation ratio as the synthetic queries.
+    """
+    ordered = sorted(topic_ids, key=lambda topic_id: (int(topic_id) if str(topic_id).isdigit() else str(topic_id)))
+    if not ordered:
+        return {}
+    generator = random.Random(seed)
+    generator.shuffle(ordered)
+    if len(ordered) == 1:
+        return {ordered[0]: "train"}
+    if len(ordered) == 2:
+        return {ordered[0]: "train", ordered[1]: "test"}
+    n_test = max(1, round(len(ordered) / 3))
+    n_test = min(n_test, len(ordered) - 2)
+    others = ordered[n_test:]
+    n_val = int(round(len(others) * val_ratio / (train_ratio + val_ratio)))
+    if n_val < 1:
+        n_val = 1
+    if n_val >= len(others):
+        n_val = len(others) - 1
+    splits = {}
+    for index, topic_id in enumerate(others):
+        splits[topic_id] = "validation" if index < n_val else "train"
+    for topic_id in ordered[:n_test]:
+        splits[topic_id] = "test"
+    return splits
+
+
+def category_counts(pairs: list[dict]) -> dict[str, dict[str, int]]:
+    """Count relation, attribute, and value pairs, with positives and negatives separate."""
+    counts: dict[str, dict[str, int]] = {}
+    for element_type in ("relation", "attribute", "value"):
+        chosen = [pair for pair in pairs if pair["element_type"] == element_type]
+        positive = sum(int(pair["label"]) == 1 for pair in chosen)
+        negative = sum(int(pair["label"]) == 0 for pair in chosen)
+        counts[element_type] = {"positive": positive, "negative": negative, "total": positive + negative}
+    positive = sum(int(pair["label"]) == 1 for pair in pairs)
+    counts["all"] = {"positive": positive, "negative": len(pairs) - positive, "total": len(pairs)}
+    return counts
+
+
+def build_topic_instances(
+    connection: sqlite3.Connection,
+    schema: Schema,
+    topics: list,
+    examples: dict[str, list[str]],
+    content_values: dict[str, list[str]],
+    config: dict,
+) -> tuple[list[dict], list[dict], dict, dict[str, str]]:
+    """Turn Coffman topics into the same pair format as the synthetic queries.
+
+    Gold relations are the relations of the judged tuples. A cell in one of those
+    tuples is a positive attribute and a positive value when it contains a query
+    keyword. One third of the topics are test queries. The rest are train or validation.
+    """
+    rng = random.Random(int(config["seed"]))
+    value_pool = _content_pool(content_values, schema, int(config["max_value_chars"]))
+    relation_pool = [relation_text_record(schema.relations[name]) for name in sorted(schema.relations)]
+    attribute_pool = _attribute_pool(schema, examples)
+    split_of = assign_topic_splits(
+        [str(topic.topic_id) for topic in topics],
+        int(config["seed"]),
+        float(config["train_ratio"]),
+        float(config["val_ratio"]),
+    )
+    search_map = _search_map(connection)
+    max_chars = int(config["max_value_chars"])
+    queries: list[dict] = []
+    pairs: list[dict] = []
+    skipped = 0
+    for topic in topics:
+        topic_id = str(topic.topic_id)
+        keywords = [token for token in tokenize(topic.query) if token not in STOPWORDS and len(token) > 1]
+        if not keywords:
+            keywords = [token for token in tokenize(topic.query) if token]
+        relations: list[str] = []
+        attribute_keys: list[str] = []
+        keyword_values: list[tuple[str, str, str]] = []
+        seen_relations: set[str] = set()
+        seen_attributes: set[str] = set()
+        seen_values: set[str] = set()
+        for search_id in topic.search_ids:
+            relation_name = search_map.get(int(search_id))
+            if relation_name is None or relation_name not in schema.relations:
+                continue
+            if relation_name not in seen_relations:
+                seen_relations.add(relation_name)
+                relations.append(relation_name)
+            row = _row_by_search_id(connection, relation_name, search_id)
+            if row is None:
+                continue
+            relation = schema.relations[relation_name]
+            for attribute in relation.keyword_attributes():
+                raw = row.get(attribute.name)
+                if raw is None or not str(raw).strip():
+                    continue
+                if not conflicts_with_keywords(str(raw), keywords):
+                    continue
+                attribute_key = f"{relation_name}.{attribute.name}"
+                if attribute_key not in seen_attributes:
+                    seen_attributes.add(attribute_key)
+                    attribute_keys.append(attribute_key)
+                element_id = value_element_id(relation_name, attribute.name, str(raw))
+                if element_id in seen_values:
+                    continue
+                seen_values.add(element_id)
+                keyword_values.append((relation_name, attribute.name, str(raw)))
+        if not relations:
+            skipped += 1
+            continue
+        query_record = {
+            "query_id": f"t{int(topic_id):05d}",
+            "query": topic.query,
+            "source": "coffman",
+            "class_id": f"topic:{topic_id}",
+            "relations": relations,
+            "keyword_attributes": attribute_keys,
+            "keywords": keywords,
+            "split": split_of[topic_id],
+            "topic_id": topic_id,
+        }
+        pair_rows = _pairs_for_query(
+            schema,
+            examples,
+            query_record,
+            keyword_values,
+            relation_pool,
+            attribute_pool,
+            value_pool,
+            rng,
+            int(config["negatives_per_positive"]),
+            float(config["hard_negative_ratio"]),
+            max_chars,
+        )
+        if not pair_rows:
+            skipped += 1
+            continue
+        for pair in pair_rows:
+            pair["split"] = query_record["split"]
+        queries.append(query_record)
+        pairs.extend(pair_rows)
+    stats = {
+        "topics": len(topics),
+        "topics_used": len(queries),
+        "topics_skipped": skipped,
+        "pairs": len(pairs),
+        "splits": {
+            name: sum(1 for query in queries if query["split"] == name) for name in ("train", "validation", "test")
+        },
+    }
+    logger.info("prepared coffman topics %s", stats)
+    return queries, pairs, stats, split_of
+
+
+def _search_map(connection: sqlite3.Connection) -> dict[int, str]:
+    try:
+        rows = connection.execute("SELECT search_id, relation FROM semstruct_search_id").fetchall()
+    except sqlite3.OperationalError:
+        return {}
+    return {int(search_id): str(relation) for search_id, relation in rows}
+
+
+def _row_by_search_id(connection: sqlite3.Connection, relation_name: str, search_id: int) -> dict | None:
+    statement = (
+        f"SELECT * FROM {quote_ident(relation_name)} WHERE {quote_ident('__search_id')} = ?"
+    )
+    cursor = connection.execute(statement, (str(search_id),))
+    row = cursor.fetchone()
+    if row is None:
+        return None
+    names = [item[0] for item in cursor.description]
+    return dict(zip(names, row))
 
 
 def relation_text_record(relation: Relation) -> dict[str, str]:
@@ -453,6 +633,7 @@ def _pair(
         "element_text": text,
         "label": label,
         "class_id": query["class_id"],
+        "source": query.get("source", "synthetic"),
     }
 
 

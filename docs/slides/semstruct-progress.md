@@ -81,22 +81,22 @@ A person types a few words. The eventual answer is a joined tuple. Before that, 
 <div class="grid">
   <div class="card">
     <p class="kicker">Mondial</p>
-    <p class="num">29,996</p>
+    <p class="num">31,840</p>
     <p class="meta">pairs, 28 relations</p>
   </div>
   <div class="card">
     <p class="kicker">IMDb 2009</p>
-    <p class="num">6,380</p>
+    <p class="num">7,456</p>
     <p class="meta">pairs, 6 relations</p>
   </div>
   <div class="card">
     <p class="kicker">Wikipedia 2008</p>
-    <p class="num">3,832</p>
+    <p class="num">5,076</p>
     <p class="meta">pairs, 6 relations</p>
   </div>
 </div>
 
-<p class="note">Fifty human topics per database are held out of training.</p>
+<p class="note">Seventeen of the 50 human topics are test queries. The other 33 are training data.</p>
 
 ---
 
@@ -170,22 +170,22 @@ A person types a few words. The eventual answer is a joined tuple. Before that, 
 <div class="grid">
   <div class="card">
     <p class="kicker">Mondial</p>
-    <p class="num">0.876</p>
-    <p class="meta">test F1, ROC-AUC 0.984</p>
+    <p class="num">0.861</p>
+    <p class="meta">test F1, ROC-AUC 0.975</p>
   </div>
   <div class="card">
     <p class="kicker">IMDb</p>
-    <p class="num">0.968</p>
-    <p class="meta">test F1, ROC-AUC 0.998</p>
+    <p class="num">0.909</p>
+    <p class="meta">test F1, ROC-AUC 0.984</p>
   </div>
   <div class="card">
     <p class="kicker">Wikipedia</p>
-    <p class="num">0.926</p>
-    <p class="meta">test F1, ROC-AUC 0.992</p>
+    <p class="num">0.927</p>
+    <p class="meta">test F1, ROC-AUC 0.988</p>
   </div>
 </div>
 
-<p class="note">Validation F1 was 0.873, 0.979, and 0.943. The baselines stay near 0.30 to 0.42 F1.</p>
+<p class="note">Validation F1 was 0.862, 0.973, and 0.912. The baselines stay near 0.28 to 0.40 F1.</p>
 
 ---
 
@@ -198,13 +198,13 @@ A person types a few words. The eventual answer is a joined tuple. Before that, 
 <p class="query">Held-out Mondial test query. Seven of 28 elements are relevant.</p>
 
 <ul class="scores">
-  <li class="hit"><span class="score">0.996</span><span>relation city</span><span class="tag">relevant</span></li>
-  <li class="hit"><span class="score">0.996</span><span>relation country</span><span class="tag">relevant</span></li>
-  <li class="hit"><span class="score">0.995</span><span>relation borders</span><span class="tag">relevant</span></li>
-  <li class="hit"><span class="score">0.994</span><span>attribute city.name</span><span class="tag">relevant</span></li>
-  <li class="hit"><span class="score">0.989</span><span>attribute country.province</span><span class="tag">relevant</span></li>
-  <li><span class="score">0.908</span><span>value country.capital = montevideo</span><span class="tag">overlap</span></li>
-  <li><span class="score">0.061</span><span>values with neither keyword</span><span class="tag">irrelevant</span></li>
+  <li class="hit"><span class="score">0.998</span><span>relation country</span><span class="tag">relevant</span></li>
+  <li class="hit"><span class="score">0.997</span><span>relation city</span><span class="tag">relevant</span></li>
+  <li class="hit"><span class="score">0.997</span><span>relation borders</span><span class="tag">relevant</span></li>
+  <li class="hit"><span class="score">0.997</span><span>attribute country.province</span><span class="tag">relevant</span></li>
+  <li class="hit"><span class="score">0.997</span><span>attribute city.name</span><span class="tag">relevant</span></li>
+  <li><span class="score">0.937</span><span>value country.capital = montevideo</span><span class="tag">overlap</span></li>
+  <li><span class="score">0.006</span><span>values with neither keyword</span><span class="tag">irrelevant</span></li>
 </ul>
 
 ---

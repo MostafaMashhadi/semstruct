@@ -10,7 +10,7 @@ from pathlib import Path
 from semstruct.data.download import locate_files
 from semstruct.data.dump import load_sqlite
 from semstruct.data.elements import schema_element_records
-from semstruct.data.instances import build_instances, sample_example_values
+from semstruct.data.instances import build_instances, build_topic_instances, category_counts, sample_example_values
 from semstruct.data.query_classes import select_query_classes
 from semstruct.data.topics import extract_topics, load_topics, topic_query_norms
 from semstruct.paths import processed_dir
@@ -41,7 +41,6 @@ def prepare_dataset(dataset: str, config: dict, root: Path | None = None, rebuil
     if rebuild or not any(topics_dir.rglob("*.txt")):
         extract_topics(files["topics"], topics_dir)
     topics = load_topics(topics_dir)
-    write_jsonl(destination / "topics.jsonl", [topic.as_dict() for topic in topics])
 
     classes = select_query_classes(
         schema,
@@ -75,8 +74,36 @@ def prepare_dataset(dataset: str, config: dict, root: Path | None = None, rebuil
             topic_query_norms(topics),
             config,
         )
+        topic_queries, topic_pairs, topic_stats, topic_splits = build_topic_instances(
+            connection,
+            schema,
+            topics,
+            examples,
+            sampled,
+            config,
+        )
     finally:
         connection.close()
+    queries.extend(topic_queries)
+    pairs.extend(topic_pairs)
+    stats["synthetic_queries"] = stats["queries"]
+    stats["synthetic_pairs"] = stats["pairs"]
+    stats["queries"] = len(queries)
+    stats["pairs"] = len(pairs)
+    stats["coffman"] = topic_stats
+    for name in ("train", "validation", "test"):
+        stats["splits"][name] = sum(1 for query in queries if query["split"] == name)
+    stats["categories"] = category_counts(pairs)
+    stats["categories_by_source"] = {
+        source: category_counts([pair for pair in pairs if pair.get("source") == source])
+        for source in ("synthetic", "coffman")
+    }
+    topic_rows = []
+    for topic in topics:
+        row = topic.as_dict()
+        row["split"] = topic_splits.get(str(topic.topic_id), "train")
+        topic_rows.append(row)
+    write_jsonl(destination / "topics.jsonl", topic_rows)
 
     write_jsonl(destination / "elements.jsonl", schema_element_records(schema, examples))
     write_jsonl(destination / "queries.jsonl", queries)

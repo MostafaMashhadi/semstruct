@@ -278,7 +278,8 @@ def _coffman_report(topics, schema, examples, search_map, systems, model, tokeni
     system_groups = {name: {} for name in systems}
     skipped = 0
     unresolved = 0
-    for topic in topics:
+    scored_topics = [topic for topic in topics if topic.get("split", "test") == "test"]
+    for topic in scored_topics:
         gold = set()
         for search_id in topic["search_ids"]:
             relation = search_map.get(int(search_id))
@@ -357,12 +358,15 @@ def _coffman_report(topics, schema, examples, search_map, systems, model, tokeni
     return {
         "relation_ranking": ranking,
         "topics": len(topics),
+        "topics_in_report": len(scored_topics),
+        "topics_used_in_training_or_validation": len(topics) - len(scored_topics),
         "topics_without_resolved_tuples": skipped,
         "unresolved_search_ids": unresolved,
         "qualitative": qualitative,
         "note": (
-            "Gold relations are the relations of tuples cited by __search_id in the "
-            "Coffman relevance assessments. Attribute ranking is qualitative because "
-            "the assessments do not label attributes."
+            "One third of the Coffman topics are the test slice scored here. "
+            "The other two thirds are training and validation pairs, so they are not in this report. "
+            "Gold relations are the relations of tuples cited by __search_id. "
+            "A cell in a judged tuple is a positive attribute or value when it contains a query keyword."
         ),
     }
