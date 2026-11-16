@@ -33,7 +33,7 @@ The synthetic pairs are capped at `max_pairs` (30000) by dropping whole queries 
 
 ## Sample counts
 
-A sample is one `(query, element)` pair. The counts below are the current prepared files in `data/processed/<dataset>/pairs.jsonl`, summed over train, validation, and test. `prepare_stats.json` stores the same numbers under `categories`.
+A sample is one `(query, element)` pair. The counts below are the current prepared files in `data/processed/<dataset>/pairs.jsonl`, summed over train, validation, and test. `prepare_stats.json` stores the same numbers under `categories`. How those pairs were divided, and the charts of that division, are in [sample-distribution.md](sample-distribution.md).
 
 | Database | Category | Positive | Negative | Total |
 | --- | --- | ---: | ---: | ---: |

@@ -156,6 +156,7 @@ The gold relations and keyword attributes are the top five. A cell that repeats 
 | [Architecture](docs/architecture.md) | Offline adaptation, and the online stage that is not built yet |
 | [Datasets](docs/datasets.md) | Coffman and Weaver subsets, citation, and what may not be redistributed |
 | [Training](docs/training.md) | Query classes, labels, leakage rules, objective, and metrics |
+| [Sample distribution](docs/sample-distribution.md) | How the 15 November pairs were split, with charts |
 | [Reproduction](docs/reproduction.md) | macOS, Windows, Linux, and CUDA install paths |
 | [Reference run](docs/logs/2026-11-14-reference-run.md) | Commands, epoch metrics, and the full trainer step log |
 | [Slides](docs/slides/semstruct-progress.md) | Short Marp deck of what this version implements |
