@@ -205,6 +205,21 @@ section.lead .date {
   line-height: 1.35;
 }
 
+.card .line {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  color: #1c1917;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.card .line span:last-child {
+  color: #0f6e56;
+  font-weight: 600;
+}
+
 .note {
   margin-top: 18px;
 }

@@ -22,7 +22,7 @@ Use --pdf or --pptx for the other formats. The HTML file is a preview, not part 
 
 One DistilBERT model per database, trained to say which schema element a keyword query refers to.
 
-<p class="date">14 November 2026</p>
+<p class="date">15 November 2026</p>
 
 ---
 
@@ -96,7 +96,38 @@ A person types a few words. The eventual answer is a joined tuple. Before that, 
   </div>
 </div>
 
-<p class="note">Seventeen of the 50 human topics are test queries. The other 33 are training data.</p>
+<p class="note">Of the 50 human topics, 29 train, 4 validate, and 17 stay in the test split.</p>
+
+---
+
+<!-- _class: cards -->
+
+<p class="eyebrow">Pair kinds</p>
+
+# Relation, attribute, or cell
+
+<div class="grid">
+  <div class="card">
+    <p class="kicker">Mondial · 31,840</p>
+    <p class="line"><span>Relation</span><span>3,022 / 77</span></p>
+    <p class="line"><span>Attribute</span><span>2,433 / 329</span></p>
+    <p class="line"><span>Value</span><span>2,505 / 23,474</span></p>
+  </div>
+  <div class="card">
+    <p class="kicker">IMDb · 7,456</p>
+    <p class="line"><span>Relation</span><span>682 / 18</span></p>
+    <p class="line"><span>Attribute</span><span>578 / 92</span></p>
+    <p class="line"><span>Value</span><span>604 / 5,482</span></p>
+  </div>
+  <div class="card">
+    <p class="kicker">Wikipedia · 5,076</p>
+    <p class="line"><span>Relation</span><span>453 / 16</span></p>
+    <p class="line"><span>Attribute</span><span>374 / 65</span></p>
+    <p class="line"><span>Value</span><span>442 / 3,726</span></p>
+  </div>
+</div>
+
+<p class="note">Each line is relevant pairs, then the rest. These dumps have no separate description sample.</p>
 
 ---
 
@@ -123,6 +154,8 @@ A person types a few words. The eventual answer is a joined tuple. Before that, 
   </div>
 </div>
 
+<p class="note">A human topic uses the judged tuple: its relation, and any cell that contains a keyword.</p>
+
 ---
 
 <p class="eyebrow">Model</p>
@@ -147,7 +180,7 @@ A person types a few words. The eventual answer is a joined tuple. Before that, 
   </div>
   <div>
     <span>2</span>
-    <p>Fine-tune on Apple Silicon, device MPS, for at most three epochs.</p>
+    <p>Fine-tune on MPS, including 33 of the 50 human topics.</p>
   </div>
   <div>
     <span>3</span>
@@ -185,7 +218,7 @@ A person types a few words. The eventual answer is a joined tuple. Before that, 
   </div>
 </div>
 
-<p class="note">Validation F1 was 0.862, 0.973, and 0.912. The baselines stay near 0.28 to 0.40 F1.</p>
+<p class="note">Test mixes synthetic queries with 17 human topics. Validation F1 was 0.862, 0.973, and 0.912.</p>
 
 ---
 
