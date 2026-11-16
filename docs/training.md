@@ -52,6 +52,14 @@ A sample is one `(query, element)` pair. The counts below are the current prepar
 
 Of those totals, the Coffman topics contribute 1,840 Mondial pairs, 1,076 IMDb pairs, and 1,244 Wikipedia pairs. Train, validation, and test each contain positive and negative pairs of all three categories, for both the synthetic queries and the Coffman topics.
 
+The 15 November 2026 training run used the train split only. Its synthetic portion, built from query classes and excluding any string that matches a Coffman topic, is below. Each line is relevant pairs, then the rest.
+
+| Database | Queries | Relation | Attribute | Value | Pairs |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Mondial | 943 | 2,352 / 58 | 1,834 / 246 | 1,834 / 17,756 | 24,080 |
+| IMDb | 212 | 458 / 3 | 407 / 22 | 407 / 3,791 | 5,088 |
+| Wikipedia | 142 | 289 / 6 | 238 / 32 | 238 / 2,257 | 3,060 |
+
 ## Element text
 
 Relation text lists the name, attributes, primary key, foreign keys, and a comment when the dump has one. It does not list cell values.

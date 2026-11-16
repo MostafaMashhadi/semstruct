@@ -48,3 +48,5 @@ Lines that start with `#` are comments. A commented-out tuple line is not a rele
 Each database has 50 of these queries. One third, 17 queries, is reserved for the test split. The other 33 are used as training data: 29 in train and 4 in validation. A synthetic query whose normalized text equals a topic is dropped, so the human wording is not learned from one split and scored in another.
 
 The judged tuple supplies the labels. Its relation is positive. A cell in that tuple is a positive attribute and a positive value when the cell contains a keyword from the topic. The pair counts for relations, attributes, and values, with positives and negatives separate, are in [training.md](training.md).
+
+On the 15 November training split the synthetic queries were 943 on Mondial (24,080 pairs), 212 on IMDb (5,088 pairs), and 142 on Wikipedia (3,060 pairs). The relation, attribute, and value breakdown is in the same section of [training.md](training.md).

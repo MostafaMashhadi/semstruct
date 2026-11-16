@@ -48,6 +48,14 @@ Each pair is one query beside one element. The element is a relation name, an at
 
 The Coffman portion of those totals is 1,840 pairs on Mondial, 1,076 on IMDb, and 1,244 on Wikipedia. On every database the 50 topics split into 29 train, 4 validation, and 17 test.
 
+The synthetic queries in the 15 November training split are separate from those topics. The two numbers in each cell are relevant pairs, then the rest.
+
+| Database | Queries | Relation | Attribute | Value | Pairs |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Mondial | 943 | 2,352 / 58 | 1,834 / 246 | 1,834 / 17,756 | 24,080 |
+| IMDb | 212 | 458 / 3 | 407 / 22 | 407 / 3,791 | 5,088 |
+| Wikipedia | 142 | 289 / 6 | 238 / 32 | 238 / 2,257 | 3,060 |
+
 ## Data
 
 The three databases are the evaluation subsets of the Coffman and Weaver relational keyword-search benchmark, not dumps collected for this project and not the full IMDb or Wikipedia archives.
