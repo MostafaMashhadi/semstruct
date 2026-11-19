@@ -27,9 +27,15 @@ class Topic:
     topic_id: str
     query: str
     search_ids: list[int] = field(default_factory=list)
+    answers: list[list[int]] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, object]:
-        return {"topic_id": self.topic_id, "query": self.query, "search_ids": list(self.search_ids)}
+        return {
+            "topic_id": self.topic_id,
+            "query": self.query,
+            "search_ids": list(self.search_ids),
+            "answers": [list(answer) for answer in self.answers],
+        }
 
 
 def extract_topics(archive: Path, destination: Path) -> Path:
@@ -59,6 +65,7 @@ def parse_topic_file(path: Path) -> Topic:
     topic_id = str(int(path.stem))
     query = ""
     search_ids: list[int] = []
+    answers: list[list[int]] = []
     for raw_line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         line = raw_line.strip()
         if not line:
@@ -70,11 +77,12 @@ def parse_topic_file(path: Path) -> Topic:
             continue
         code = line.split("#", 1)[0].strip()
         for match in _RESULT_RE.finditer(code):
-            for piece in match.group(1).split(","):
-                piece = piece.strip()
-                if piece:
-                    search_ids.append(int(piece))
-    return Topic(topic_id=topic_id, query=query, search_ids=search_ids)
+            answer = [int(piece) for piece in match.group(1).split(",") if piece.strip()]
+            if not answer:
+                continue
+            answers.append(answer)
+            search_ids.extend(answer)
+    return Topic(topic_id=topic_id, query=query, search_ids=search_ids, answers=answers)
 
 
 def topic_query_norms(topics: list[Topic]) -> set[str]:

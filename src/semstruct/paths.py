@@ -41,6 +41,10 @@ def networks_dir(dataset: str, root: Path | None = None) -> Path:
     return output_dir(dataset, root) / "networks"
 
 
+def icn_dir(dataset: str, root: Path | None = None) -> Path:
+    return output_dir(dataset, root) / "icn"
+
+
 def model_dir(dataset: str, root: Path | None = None) -> Path:
     return (root or project_root()) / "outputs" / "models" / dataset
 

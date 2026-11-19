@@ -48,6 +48,9 @@ def main(argv: list[str] | None = None) -> None:
     _add_dataset(cns)
     cns.add_argument("--max-relations", type=int, default=5)
 
+    icn = subparsers.add_parser("icn", help="Score primary networks, join them, and measure Coffman retrieval")
+    _add_dataset(icn)
+
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     datasets = resolve_datasets(args.dataset)
@@ -90,6 +93,12 @@ def main(argv: list[str] | None = None) -> None:
 
         for dataset in datasets:
             generate_dataset(dataset, max_relations=args.max_relations)
+        return
+    if args.command == "icn":
+        from semstruct.networks.icn import evaluate_dataset
+
+        for dataset in datasets:
+            evaluate_dataset(dataset)
         return
     raise SystemExit(f"Unknown command {args.command}")
 

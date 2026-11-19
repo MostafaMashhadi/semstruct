@@ -21,4 +21,5 @@ def test_topic_file_skips_comments_and_metadata(tmp_path):
     assert topic.topic_id == "1"
     assert topic.query == "denzel washington"
     assert topic.search_ids == [39927668, 1, 2]
+    assert topic.answers == [[39927668], [1, 2]]
     assert normalize_text(topic.query) in topic_query_norms([topic])

@@ -72,6 +72,10 @@ Pooled over all 50 Coffman topics. These are keyword-element decisions. ICN, Key
 
 Join trees for the 50 Coffman topics on each database are written to `outputs/<dataset>/networks/primary-cns.json`. The counts and charts are in [Primary candidate networks](docs/primary-cns.md).
 
+## Integrated candidate networks
+
+The held-out fold scores those networks. The best joins run on the SQLite benchmark, and the ranked answers are compared with the Coffman judgments. Top-1, MRR, and MAP are in [Integrated candidate networks](docs/icn.md).
+
 ## Data
 
 The three databases are the evaluation subsets of the Coffman and Weaver relational keyword-search benchmark, not dumps collected for this project and not the full IMDb or Wikipedia archives.

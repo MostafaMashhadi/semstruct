@@ -1,6 +1,6 @@
 # Architecture
 
-SemStruct has an offline adaptation stage and an online query stage. This repository builds the training pairs, fine-tunes DistilBERT, and generates primary candidate networks from the database. It does not yet score those networks or evaluate an integrated candidate network.
+SemStruct has an offline adaptation stage and an online query stage. This repository builds the training pairs, fine-tunes DistilBERT, generates primary candidate networks, scores them, and evaluates the joined answers.
 
 ```mermaid
 flowchart LR
@@ -10,7 +10,9 @@ flowchart LR
   pairs --> tune[DistilBERT fine-tune]
   tune --> model[One model per database]
   sqlite --> cns[Primary candidate networks]
-  model --> rank[Element and class scores]
+  model --> score[Network scores]
+  cns --> score
+  score --> answers[Joined answers]
 ```
 
 ## Offline database adaptation
@@ -40,7 +42,7 @@ These Coffman dumps have no relation comments, so the description line is absent
 
 ## Online query processing
 
-Primary candidate networks are generated from the database for the 50 Coffman topics. The counts are in [Primary candidate networks](primary-cns.md). Scoring those networks and building an integrated candidate network are not implemented.
+Primary candidate networks are generated for the 50 Coffman topics. Each topic is then scored by the fold that held it out, and the best networks are joined on the SQLite benchmark. Top-1, MRR, and MAP are in [Integrated candidate networks](icn.md).
 
 1. Preprocess the keyword query and retrieve a short list of schema and content elements.
 2. Score each element with the fine-tuned model. No gradient step is taken at query time.
@@ -53,4 +55,4 @@ A query-class score is the mean relevance probability of the class's relations a
 
 ## What this version evaluates
 
-The experiments measure the ranker. Each fold holds out 10 of the 50 Coffman topics. Eight of the remaining topics choose the checkpoint and the decision threshold, and 32 train, together with every synthetic instance. A hit at or above that threshold is retrieved. Precision, recall, and F1 are pooled over all 50 topics. Scoring time is the mean time to score one test query's index hits. The pre-trained row is a frozen [CLS] cosine on the same texts. These numbers are ranker results. They do not measure candidate-network workload or end-to-end retrieval time.
+The experiments measure two stages. The ranker section below is keyword-element retrieval. End-to-end top-1, MRR, and MAP of the joined answers are in [Integrated candidate networks](icn.md). Each fold holds out 10 of the 50 Coffman topics. Eight of the remaining topics choose the checkpoint and the decision threshold, and 32 train, together with every synthetic instance. A hit at or above that threshold is retrieved. Precision, recall, and F1 are pooled over all 50 topics. Scoring time in the ranker table is the mean time to score one test query's index hits. The pre-trained row is a frozen [CLS] cosine on the same texts.
