@@ -5,7 +5,7 @@ from __future__ import annotations
 import torch
 
 from semstruct.data.elements import content_tokens
-from semstruct.model.encoding import encode_element, encode_keyword_query
+from semstruct.ranker.encoding import encode_element, encode_keyword_query
 
 
 def overlap_score(query: str, element_text: str) -> float:

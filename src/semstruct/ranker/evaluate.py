@@ -11,12 +11,12 @@ from semstruct.config import load_config
 from semstruct.data.instances import folds_for_topics, select_fold_pairs
 from semstruct.data.prepare import read_jsonl
 from semstruct.device import release_device_cache
-from semstruct.model.classifier import load_ranker
-from semstruct.model.scoring import relevance_probabilities
-from semstruct.paths import fold_model_dir, fold_output_dir, output_dir, processed_dir, project_root
+from semstruct.ranker.classifier import load_ranker
+from semstruct.ranker.scoring import relevance_probabilities
+from semstruct.paths import fold_model_dir, fold_output_dir, processed_dir, project_root, ranker_dir
 from semstruct.runlog import emit, format_eval, format_pooled
-from semstruct.training.baselines import overlap_scores, pretrained_cosine
-from semstruct.training.metrics import best_f1_threshold, pool_retrieval, retrieval_counts
+from semstruct.ranker.baselines import overlap_scores, pretrained_cosine
+from semstruct.ranker.metrics import best_f1_threshold, pool_retrieval, retrieval_counts
 
 
 def evaluate_dataset(
@@ -76,7 +76,7 @@ def write_cv_metrics(dataset: str, root: Path | None = None, n_folds: int = 5) -
         "ranker_results": systems,
         "folds": fold_payloads,
     }
-    destination = output_dir(dataset, root)
+    destination = ranker_dir(dataset, root)
     destination.mkdir(parents=True, exist_ok=True)
     (destination / "cv-metrics.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     log_path = destination / "run.log"

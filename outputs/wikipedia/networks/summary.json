@@ -1,0 +1,7 @@
+{
+  "dataset": "wikipedia",
+  "topics": 50,
+  "networks": 1914,
+  "topics_without_networks": [],
+  "path": "/Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/wikipedia/networks/primary-cns.json"
+}

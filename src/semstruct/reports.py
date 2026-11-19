@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from semstruct.paths import DATASETS, output_dir, project_root
+from semstruct.paths import DATASETS, processed_dir, project_root, ranker_dir
 from semstruct.results import export_training_data
 
 NAMES = {"mondial": "Mondial", "imdb": "IMDb", "wikipedia": "Wikipedia"}
@@ -43,8 +43,8 @@ def write_reports(root: Path | None = None) -> None:
 
 
 def _dataset_record(dataset: str, root: Path) -> dict:
-    stats_path = output_dir(dataset, root) / "prepare_stats.json"
-    metrics_path = output_dir(dataset, root) / "cv-metrics.json"
+    stats_path = ranker_dir(dataset, root) / "prepare_stats.json"
+    metrics_path = ranker_dir(dataset, root) / "cv-metrics.json"
     stats = json.loads(stats_path.read_text(encoding="utf-8")) if stats_path.is_file() else None
     metrics = json.loads(metrics_path.read_text(encoding="utf-8")) if metrics_path.is_file() else None
     return {"stats": stats, "metrics": metrics}
@@ -95,6 +95,10 @@ Pooled over all 50 Coffman topics. These are keyword-element decisions. ICN, Key
 
 ![Pairs per keyword](docs/figures/pairs-per-keyword.png)
 
+## Primary candidate networks
+
+Join trees for the 50 Coffman topics on each database are written to `outputs/<dataset>/networks/primary-cns.json`. The counts and charts are in [Primary candidate networks](docs/primary-cns.md).
+
 ## Data
 
 The three databases are the evaluation subsets of the Coffman and Weaver relational keyword-search benchmark, not dumps collected for this project and not the full IMDb or Wikipedia archives.
@@ -126,7 +130,7 @@ semstruct train --dataset all --fold all
 semstruct evaluate --dataset all --fold all
 ```
 
-Checkpoints are written to `outputs/models/<dataset>/fold-<k>/` and are not uploaded. Pooled ranker numbers go to `outputs/<dataset>/cv-metrics.json`.
+Checkpoints are written to `outputs/models/<dataset>/fold-<k>/` and are not uploaded. Pooled ranker numbers go to `outputs/<dataset>/ranker/cv-metrics.json`.
 
 ## Score a query
 
@@ -134,8 +138,8 @@ Load the fold checkpoint for the database you are querying. Pass the keyword, th
 
 ```python
 from semstruct.device import select_device
-from semstruct.model.classifier import load_ranker
-from semstruct.model.scoring import relevance_probabilities
+from semstruct.ranker.classifier import load_ranker
+from semstruct.ranker.scoring import relevance_probabilities
 
 tokenizer, model = load_ranker("outputs/models/mondial/fold-0")
 scores = relevance_probabilities(
@@ -173,7 +177,8 @@ tests/                           parser, labeling, and metric tests
 data/raw/                        benchmark dumps, not committed
 data/processed/                  SQLite databases and training pairs, not committed
 outputs/models/<dataset>/fold-k  fine-tuned checkpoints, not committed
-outputs/<dataset>                metrics and run configuration
+outputs/<dataset>/ranker          metrics and run configuration
+outputs/<dataset>/networks       primary candidate networks
 exports/training-data/           current pair export, not committed
 ```
 
@@ -358,7 +363,7 @@ semstruct train --dataset mondial --fold all
 semstruct evaluate --dataset mondial --fold all
 ```
 
-Repeat for `imdb` and `wikipedia`, one database at a time. `--fold all` runs folds 0 through 4. Each fold writes `outputs/<dataset>/fold-<k>/run.log`, `run_config.json`, and `train_history.json`. Evaluation writes `metrics.json` in that directory and pools finished folds into `outputs/<dataset>/cv-metrics.json`.
+Repeat for `imdb` and `wikipedia`, one database at a time. `--fold all` runs folds 0 through 4. Each fold writes `outputs/<dataset>/ranker/fold-<k>/run.log`, `run_config.json`, and `train_history.json`. Evaluation writes `metrics.json` in that directory and pools finished folds into `outputs/<dataset>/ranker/cv-metrics.json`.
 
 `prepare` reuses SQLite unless `--rebuild` is set. It rewrites the pair files, stamps each Coffman topic with its test fold, and copies `prepare_stats.json` to `outputs/<dataset>/`.
 
@@ -368,11 +373,11 @@ Repeat for `imdb` and `wikipedia`, one database at a time. `--fold all` runs fol
 | --- | --- |
 | `data/processed/<dataset>/pairs.jsonl` | Keyword instances |
 | `data/processed/<dataset>/prepare_stats.json` | Counts, categories, and fold roles |
-| `outputs/<dataset>/prepare_stats.json` | The same prepare record |
+| `outputs/<dataset>/ranker/prepare_stats.json` | The same prepare record |
 | `outputs/models/<dataset>/fold-<k>/` | Fine-tuned encoder and `scorer.pt` |
-| `outputs/<dataset>/fold-<k>/run.log` | Plain lines from that fold |
-| `outputs/<dataset>/fold-<k>/metrics.json` | Threshold, precision, recall, F1, scoring time |
-| `outputs/<dataset>/cv-metrics.json` | Pooled ranker numbers for the folds that have finished |
+| `outputs/<dataset>/ranker/fold-<k>/run.log` | Plain lines from that fold |
+| `outputs/<dataset>/ranker/fold-<k>/metrics.json` | Threshold, precision, recall, F1, scoring time |
+| `outputs/<dataset>/ranker/cv-metrics.json` | Pooled ranker numbers for the folds that have finished |
 | `exports/training-data/` | Current pair export |
 
 ## Tests
@@ -451,7 +456,7 @@ Each fold tests 10 Coffman topics. Eight of the rest choose the checkpoint and t
 def _run_log(records: dict[str, dict], root: Path) -> str:
     sections = ["# Latest run", "", "Plain lines from the current prepare and fold logs.", ""]
     for dataset in DATASETS:
-        prepare_log = output_dir(dataset, root) / "prepare.log"
+        prepare_log = ranker_dir(dataset, root) / "prepare.log"
         if prepare_log.is_file():
             sections.append(f"## {NAMES[dataset]} prepare")
             sections.append("")
@@ -460,7 +465,7 @@ def _run_log(records: dict[str, dict], root: Path) -> str:
             sections.append("```")
             sections.append("")
         for fold in range(5):
-            path = output_dir(dataset, root) / f"fold-{fold}" / "run.log"
+            path = ranker_dir(dataset, root) / f"fold-{fold}" / "run.log"
             if not path.is_file():
                 continue
             sections.append(f"## {NAMES[dataset]} fold {fold}")

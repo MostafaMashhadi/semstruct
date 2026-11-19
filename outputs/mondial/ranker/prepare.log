@@ -1,1 +1,2 @@
 mondial | prepare | reused sqlite | synthetic queries 984 | synthetic pairs 30000 | coffman topics 50 | coffman pairs 1724 | roles 32 train, 8 validation, 10 test | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/data/processed/mondial/pairs.jsonl
+mondial | primary cns | topics 50 | networks 2698 | topics without networks 2 | 27, 34 | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/mondial/networks/primary-cns.json

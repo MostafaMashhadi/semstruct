@@ -1,0 +1,10 @@
+{
+  "dataset": "mondial",
+  "topics": 50,
+  "networks": 2698,
+  "topics_without_networks": [
+    "27",
+    "34"
+  ],
+  "path": "/Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/mondial/networks/primary-cns.json"
+}

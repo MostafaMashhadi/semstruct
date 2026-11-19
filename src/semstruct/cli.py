@@ -44,6 +44,10 @@ def main(argv: list[str] | None = None) -> None:
     evaluate.add_argument("--batch-size", type=int, default=None)
     evaluate.add_argument("--fold", default="all", help="Fold 0-4, or all")
 
+    cns = subparsers.add_parser("cns", help="Generate primary candidate networks for the Coffman topics")
+    _add_dataset(cns)
+    cns.add_argument("--max-relations", type=int, default=5)
+
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     datasets = resolve_datasets(args.dataset)
@@ -57,7 +61,7 @@ def main(argv: list[str] | None = None) -> None:
             prepare_dataset(dataset, config, rebuild=args.rebuild)
         return
     if args.command == "train":
-        from semstruct.training.train import overfit_check, train_dataset
+        from semstruct.ranker.train import overfit_check, train_dataset
 
         for dataset in datasets:
             config = load_config(dataset, args.config)
@@ -75,11 +79,17 @@ def main(argv: list[str] | None = None) -> None:
             )
         return
     if args.command == "evaluate":
-        from semstruct.training.evaluate import evaluate_dataset
+        from semstruct.ranker.evaluate import evaluate_dataset
 
         for dataset in datasets:
             config = load_config(dataset, args.config)
             evaluate_dataset(dataset, config, batch_size=args.batch_size, fold=_parse_fold(args.fold))
+        return
+    if args.command == "cns":
+        from semstruct.networks.primary import generate_dataset
+
+        for dataset in datasets:
+            generate_dataset(dataset, max_relations=args.max_relations)
         return
     raise SystemExit(f"Unknown command {args.command}")
 

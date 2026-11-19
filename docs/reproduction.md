@@ -47,7 +47,7 @@ semstruct train --dataset mondial --fold all
 semstruct evaluate --dataset mondial --fold all
 ```
 
-Repeat for `imdb` and `wikipedia`, one database at a time. `--fold all` runs folds 0 through 4. Each fold writes `outputs/<dataset>/fold-<k>/run.log`, `run_config.json`, and `train_history.json`. Evaluation writes `metrics.json` in that directory and pools finished folds into `outputs/<dataset>/cv-metrics.json`.
+Repeat for `imdb` and `wikipedia`, one database at a time. `--fold all` runs folds 0 through 4. Each fold writes `outputs/<dataset>/ranker/fold-<k>/run.log`, `run_config.json`, and `train_history.json`. Evaluation writes `metrics.json` in that directory and pools finished folds into `outputs/<dataset>/ranker/cv-metrics.json`.
 
 `prepare` reuses SQLite unless `--rebuild` is set. It rewrites the pair files, stamps each Coffman topic with its test fold, and copies `prepare_stats.json` to `outputs/<dataset>/`.
 
@@ -57,11 +57,11 @@ Repeat for `imdb` and `wikipedia`, one database at a time. `--fold all` runs fol
 | --- | --- |
 | `data/processed/<dataset>/pairs.jsonl` | Keyword instances |
 | `data/processed/<dataset>/prepare_stats.json` | Counts, categories, and fold roles |
-| `outputs/<dataset>/prepare_stats.json` | The same prepare record |
+| `outputs/<dataset>/ranker/prepare_stats.json` | The same prepare record |
 | `outputs/models/<dataset>/fold-<k>/` | Fine-tuned encoder and `scorer.pt` |
-| `outputs/<dataset>/fold-<k>/run.log` | Plain lines from that fold |
-| `outputs/<dataset>/fold-<k>/metrics.json` | Threshold, precision, recall, F1, scoring time |
-| `outputs/<dataset>/cv-metrics.json` | Pooled ranker numbers for the folds that have finished |
+| `outputs/<dataset>/ranker/fold-<k>/run.log` | Plain lines from that fold |
+| `outputs/<dataset>/ranker/fold-<k>/metrics.json` | Threshold, precision, recall, F1, scoring time |
+| `outputs/<dataset>/ranker/cv-metrics.json` | Pooled ranker numbers for the folds that have finished |
 | `exports/training-data/` | Current pair export |
 
 ## Tests

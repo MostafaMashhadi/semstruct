@@ -16,6 +16,9 @@ data/processed/*
 # Checkpoints are large. Metrics, logs, and prepare stats are the result record.
 outputs/models/
 
+# IMDb networks exceed GitHub's 100 MB limit. Regenerate with semstruct cns --dataset imdb.
+outputs/imdb/networks/primary-cns.json
+
 exports/
 
 *.sqlite

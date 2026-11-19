@@ -13,7 +13,7 @@ from semstruct.data.elements import schema_element_records
 from semstruct.data.instances import build_instances, build_topic_instances, category_counts, sample_example_values
 from semstruct.data.query_classes import select_query_classes
 from semstruct.data.topics import extract_topics, load_topics, topic_query_norms
-from semstruct.paths import output_dir, processed_dir
+from semstruct.paths import processed_dir, ranker_dir
 from semstruct.runlog import emit, format_prepare
 
 logger = logging.getLogger(__name__)
@@ -115,7 +115,7 @@ def prepare_dataset(dataset: str, config: dict, root: Path | None = None, rebuil
     stats["relations"] = len(schema.relations)
     stats["reused_sqlite"] = reused
     (destination / "prepare_stats.json").write_text(json.dumps(stats, indent=2), encoding="utf-8")
-    report_dir = output_dir(dataset, root)
+    report_dir = ranker_dir(dataset, root)
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "prepare_stats.json").write_text(json.dumps(stats, indent=2), encoding="utf-8")
     roles = (stats.get("coffman") or {}).get("fold_roles", {}).get("0", {})

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import torch
 
-from semstruct.model.encoding import encode_keyword_query_element
+from semstruct.ranker.encoding import encode_keyword_query_element
 
 
 def relevance_probabilities(

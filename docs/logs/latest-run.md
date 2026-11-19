@@ -6,6 +6,7 @@ Plain lines from the current prepare and fold logs.
 
 ```text
 mondial | prepare | reused sqlite | synthetic queries 984 | synthetic pairs 30000 | coffman topics 50 | coffman pairs 1724 | roles 32 train, 8 validation, 10 test | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/data/processed/mondial/pairs.jsonl
+mondial | primary cns | topics 50 | networks 2698 | topics without networks 2 | 27, 34 | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/mondial/networks/primary-cns.json
 ```
 
 ## Mondial fold 0
@@ -658,6 +659,7 @@ mondial | fold 4 of 5 | evaluate | pre-trained | threshold 0.816 | test topics 1
 
 ```text
 imdb | prepare | reused sqlite | synthetic queries 268 | synthetic pairs 5334 | coffman topics 50 | coffman pairs 786125 | roles 32 train, 8 validation, 10 test | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/data/processed/imdb/pairs.jsonl
+imdb | primary cns | topics 50 | networks 60339 | topics without networks 0 | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/imdb/networks/primary-cns.json
 ```
 
 ## IMDb fold 0
@@ -860,6 +862,7 @@ imdb | fold 4 of 5 | evaluate | pre-trained | threshold 0.822 | test topics 10 |
 
 ```text
 wikipedia | prepare | reused sqlite | synthetic queries 171 | synthetic pairs 3013 | coffman topics 50 | coffman pairs 107865 | roles 32 train, 8 validation, 10 test | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/data/processed/wikipedia/pairs.jsonl
+wikipedia | primary cns | topics 50 | networks 1914 | topics without networks 0 | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/wikipedia/networks/primary-cns.json
 ```
 
 ## Wikipedia fold 0

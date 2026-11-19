@@ -68,6 +68,10 @@ Pooled over all 50 Coffman topics. These are keyword-element decisions. ICN, Key
 
 ![Pairs per keyword](docs/figures/pairs-per-keyword.png)
 
+## Primary candidate networks
+
+Join trees for the 50 Coffman topics on each database are written to `outputs/<dataset>/networks/primary-cns.json`. The counts and charts are in [Primary candidate networks](docs/primary-cns.md).
+
 ## Data
 
 The three databases are the evaluation subsets of the Coffman and Weaver relational keyword-search benchmark, not dumps collected for this project and not the full IMDb or Wikipedia archives.
@@ -99,7 +103,7 @@ semstruct train --dataset all --fold all
 semstruct evaluate --dataset all --fold all
 ```
 
-Checkpoints are written to `outputs/models/<dataset>/fold-<k>/` and are not uploaded. Pooled ranker numbers go to `outputs/<dataset>/cv-metrics.json`.
+Checkpoints are written to `outputs/models/<dataset>/fold-<k>/` and are not uploaded. Pooled ranker numbers go to `outputs/<dataset>/ranker/cv-metrics.json`.
 
 ## Score a query
 
@@ -107,8 +111,8 @@ Load the fold checkpoint for the database you are querying. Pass the keyword, th
 
 ```python
 from semstruct.device import select_device
-from semstruct.model.classifier import load_ranker
-from semstruct.model.scoring import relevance_probabilities
+from semstruct.ranker.classifier import load_ranker
+from semstruct.ranker.scoring import relevance_probabilities
 
 tokenizer, model = load_ranker("outputs/models/mondial/fold-0")
 scores = relevance_probabilities(
@@ -140,13 +144,14 @@ print(scores[0])
 
 ```text
 configs/                         experiment settings
-docs/                            architecture, data, training, reproduction, run log, samples
+docs/                            architecture, data, training, reproduction, run log
 src/semstruct/                   download, preparation, training, evaluation
 tests/                           parser, labeling, and metric tests
 data/raw/                        benchmark dumps, not committed
 data/processed/                  SQLite databases and training pairs, not committed
 outputs/models/<dataset>/fold-k  fine-tuned checkpoints, not committed
-outputs/<dataset>                metrics and run configuration
+outputs/<dataset>/ranker          metrics and run configuration
+outputs/<dataset>/networks       primary candidate networks
 exports/training-data/           current pair export, not committed
 ```
 

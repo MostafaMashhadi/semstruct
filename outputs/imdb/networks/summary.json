@@ -1,0 +1,7 @@
+{
+  "dataset": "imdb",
+  "topics": 50,
+  "networks": 60339,
+  "topics_without_networks": [],
+  "path": "/Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/imdb/networks/primary-cns.json"
+}

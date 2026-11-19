@@ -1,6 +1,6 @@
 # Architecture
 
-SemStruct has an offline adaptation stage and an online query stage. This repository implements the offline stage and the scoring functions the online stage will call. It does not generate or execute candidate networks.
+SemStruct has an offline adaptation stage and an online query stage. This repository builds the training pairs, fine-tunes DistilBERT, and generates primary candidate networks from the database. It does not yet score those networks or evaluate an integrated candidate network.
 
 ```mermaid
 flowchart LR
@@ -9,6 +9,7 @@ flowchart LR
   classes --> pairs[Keyword query element instances]
   pairs --> tune[DistilBERT fine-tune]
   tune --> model[One model per database]
+  sqlite --> cns[Primary candidate networks]
   model --> rank[Element and class scores]
 ```
 
@@ -39,16 +40,16 @@ These Coffman dumps have no relation comments, so the description line is absent
 
 ## Online query processing
 
-The online stage is the intended consumer of the checkpoint. It is not implemented.
+Primary candidate networks are generated from the database for the 50 Coffman topics. The counts are in [Primary candidate networks](primary-cns.md). Scoring those networks and building an integrated candidate network are not implemented.
 
 1. Preprocess the keyword query and retrieve a short list of schema and content elements.
 2. Score each element with the fine-tuned model. No gradient step is taken at query time.
-3. Also score each keyword separately with the same classifier. `semstruct.model.scoring.keyword_relevance` does this.
+3. Also score each keyword separately with the same classifier. `semstruct.ranker.scoring.keyword_relevance` does this.
 4. Build Integrated Candidate Networks from the high-scoring elements, subject to foreign-key connectivity.
 5. Rank those networks by semantic score, structural cost, and keyword coverage.
 6. Execute the top networks and rank the joined answers.
 
-A query-class score is the mean relevance probability of the class's relations and text attributes. That aggregate is what a later network generator can use to prefer one join shape over another. `semstruct.model.scoring.query_class_score` is that mean.
+A query-class score is the mean relevance probability of the class's relations and text attributes. That aggregate is what a later network generator can use to prefer one join shape over another. `semstruct.ranker.scoring.query_class_score` is that mean.
 
 ## What this version evaluates
 

@@ -33,6 +33,14 @@ def output_dir(dataset: str, root: Path | None = None) -> Path:
     return (root or project_root()) / "outputs" / dataset
 
 
+def ranker_dir(dataset: str, root: Path | None = None) -> Path:
+    return output_dir(dataset, root) / "ranker"
+
+
+def networks_dir(dataset: str, root: Path | None = None) -> Path:
+    return output_dir(dataset, root) / "networks"
+
+
 def model_dir(dataset: str, root: Path | None = None) -> Path:
     return (root or project_root()) / "outputs" / "models" / dataset
 
@@ -42,7 +50,7 @@ def fold_model_dir(dataset: str, fold: int, root: Path | None = None) -> Path:
 
 
 def fold_output_dir(dataset: str, fold: int, root: Path | None = None) -> Path:
-    return output_dir(dataset, root) / f"fold-{fold}"
+    return ranker_dir(dataset, root) / f"fold-{fold}"
 
 
 def resolve_datasets(name: str) -> list[str]:

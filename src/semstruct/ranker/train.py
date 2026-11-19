@@ -17,8 +17,8 @@ from semstruct.config import load_config
 from semstruct.data.instances import folds_for_topics, fold_roles, select_fold_pairs
 from semstruct.data.prepare import read_jsonl
 from semstruct.device import release_device_cache, select_device
-from semstruct.model.classifier import load_ranker, save_ranker
-from semstruct.model.encoding import encode_keyword_query_element
+from semstruct.ranker.classifier import load_ranker, save_ranker
+from semstruct.ranker.encoding import encode_keyword_query_element
 from semstruct.paths import fold_model_dir, fold_output_dir, processed_dir, project_root
 from semstruct.runlog import (
     emit,
@@ -28,7 +28,7 @@ from semstruct.runlog import (
     format_train_finish,
     format_train_start,
 )
-from semstruct.training.metrics import best_f1_threshold, retrieval_counts
+from semstruct.ranker.metrics import best_f1_threshold, retrieval_counts
 
 logger = logging.getLogger(__name__)
 

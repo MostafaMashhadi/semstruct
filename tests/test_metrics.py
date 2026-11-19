@@ -1,5 +1,5 @@
 from semstruct.runlog import format_pooled, format_train_start
-from semstruct.training.metrics import (
+from semstruct.ranker.metrics import (
     average_precision,
     best_f1_threshold,
     pool_retrieval,

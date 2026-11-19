@@ -1,1 +1,2 @@
 imdb | prepare | reused sqlite | synthetic queries 268 | synthetic pairs 5334 | coffman topics 50 | coffman pairs 786125 | roles 32 train, 8 validation, 10 test | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/data/processed/imdb/pairs.jsonl
+imdb | primary cns | topics 50 | networks 60339 | topics without networks 0 | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/imdb/networks/primary-cns.json
