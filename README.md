@@ -140,7 +140,7 @@ print(scores[0])
 
 ```text
 configs/                         experiment settings
-docs/                            architecture, data, training, reproduction, run log
+docs/                            architecture, data, training, reproduction, run log, samples
 src/semstruct/                   download, preparation, training, evaluation
 tests/                           parser, labeling, and metric tests
 data/raw/                        benchmark dumps, not committed

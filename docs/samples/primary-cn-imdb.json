@@ -1,0 +1,72 @@
+{
+  "dataset": "imdb",
+  "queries": [
+    {
+      "query_id": "t00001",
+      "topic_id": "1",
+      "query": "jack titanic",
+      "networks": [
+        {
+          "network_id": "t00001-1",
+          "nodes": [
+            {
+              "relation": "char_name",
+              "keywords": [
+                {
+                  "keyword": "jack",
+                  "role": "value",
+                  "attribute": "name",
+                  "value": "Jack Dawson"
+                }
+              ]
+            },
+            {
+              "relation": "cast_info",
+              "keywords": []
+            },
+            {
+              "relation": "title",
+              "keywords": [
+                {
+                  "keyword": "titanic",
+                  "role": "value",
+                  "attribute": "title",
+                  "value": "Titanic"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "network_id": "t00001-2",
+          "nodes": [
+            {
+              "relation": "name",
+              "keywords": [
+                {
+                  "keyword": "jack",
+                  "role": "value",
+                  "attribute": "name",
+                  "value": "Jack Nicholson"
+                }
+              ]
+            },
+            {
+              "relation": "cast_info",
+              "keywords": []
+            },
+            {
+              "relation": "title",
+              "keywords": [
+                {
+                  "keyword": "titanic",
+                  "role": "relation"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
