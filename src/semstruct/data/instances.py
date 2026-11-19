@@ -14,8 +14,7 @@ from semstruct.data.elements import (
     STOPWORDS,
     attribute_element_id,
     attribute_text,
-    conflicts_with_keywords,
-    content_tokens,
+    joined_relation_names,
     keyword_from_value,
     normalize_text,
     relation_element_id,
@@ -25,6 +24,7 @@ from semstruct.data.elements import (
     value_text,
 )
 from semstruct.data.schema import Attribute, Relation, Schema, quote_ident
+from semstruct.runlog import emit
 
 logger = logging.getLogger(__name__)
 
@@ -61,21 +61,17 @@ def build_instances(
     topic_norms: set[str],
     config: dict,
 ) -> tuple[list[dict], list[dict], dict]:
-    """Return queries, pairs, and a small stats dict.
+    """Return synthetic keyword instances. Every one of them is training data.
 
-    Splits are assigned by query, after an exact-string filter against the
-    Coffman topics. Pairs are then capped by dropping whole queries.
+    A query string that equals a Coffman topic is dropped. Value negatives are
+    capped here because these pairs are never used as validation or test.
     """
+    del examples, content_values
     rng = random.Random(int(config["seed"]))
-    value_pool = _content_pool(content_values, schema, int(config["max_value_chars"]))
-    relation_pool = [relation_text_record(schema.relations[name]) for name in sorted(schema.relations)]
-    attribute_pool = _attribute_pool(schema, examples)
     queries: list[dict] = []
-    pairs_by_query: dict[str, list[dict]] = {}
     seen_queries: set[str] = set()
     skipped_topics = 0
     skipped_empty = 0
-    max_chars = int(config["max_value_chars"])
     timeout = float(config.get("join_timeout_seconds", 15))
 
     for class_index, (class_id, relations) in enumerate(classes):
@@ -103,63 +99,55 @@ def build_instances(
                 skipped_topics += 1
                 continue
             seen_queries.add(normalized)
-            query_id = f"q{len(queries):05d}"
-            query_record = {
-                "query_id": query_id,
-                "query": query,
-                "source": "synthetic",
-                "class_id": class_id,
-                "relations": list(relations),
-                "keyword_attributes": list(keyword_attributes),
-                "keywords": list(keywords),
-            }
-            pair_rows = _pairs_for_query(
-                schema,
-                examples,
-                query_record,
-                keyword_values,
-                relation_pool,
-                attribute_pool,
-                value_pool,
-                rng,
-                int(config["negatives_per_positive"]),
-                float(config["hard_negative_ratio"]),
-                max_chars,
+            sources = [
+                {
+                    "keyword": keyword,
+                    "relation": relation_name,
+                    "attribute": attribute_name,
+                    "value": raw,
+                }
+                for keyword, (relation_name, attribute_name, raw) in zip(keywords, keyword_values)
+            ]
+            queries.append(
+                {
+                    "query_id": f"q{len(queries):05d}",
+                    "query": query,
+                    "source": "synthetic",
+                    "class_id": class_id,
+                    "relations": list(relations),
+                    "keyword_attributes": list(keyword_attributes),
+                    "keywords": list(keywords),
+                    "keyword_sources": sources,
+                    "split": "train",
+                }
             )
-            if not pair_rows:
-                seen_queries.remove(normalized)
-                continue
-            queries.append(query_record)
-            pairs_by_query[query_id] = pair_rows
         if (class_index + 1) % 50 == 0:
             logger.info("generated queries from %s/%s classes", class_index + 1, len(classes))
 
-    kept_ids = _cap_query_ids(list(pairs_by_query), pairs_by_query, int(config["max_pairs"]), int(config["seed"]))
-    kept_queries = [query for query in queries if query["query_id"] in set(kept_ids)]
-    split_of = assign_splits(
-        [query["query_id"] for query in kept_queries],
+    pairs = build_keyword_pairs(connection, schema, queries, config)
+    pairs_by_query: dict[str, list[dict]] = defaultdict(list)
+    for pair in pairs:
+        pairs_by_query[pair["query_id"]].append(pair)
+    queries = [query for query in queries if pairs_by_query.get(query["query_id"])]
+    kept_ids = _cap_query_ids(
+        [query["query_id"] for query in queries],
+        pairs_by_query,
+        int(config["max_pairs"]),
         int(config["seed"]),
-        float(config["train_ratio"]),
-        float(config["val_ratio"]),
     )
-    final_queries = []
-    final_pairs = []
-    for query in kept_queries:
-        query["split"] = split_of[query["query_id"]]
-        final_queries.append(query)
-        for pair in pairs_by_query[query["query_id"]]:
-            pair["split"] = query["split"]
-            final_pairs.append(pair)
+    kept = set(kept_ids)
+    final_queries = [query for query in queries if query["query_id"] in kept]
+    final_pairs = [pair for pair in pairs if pair["query_id"] in kept]
+    for pair in final_pairs:
+        pair["split"] = "train"
     stats = {
         "classes": len(classes),
         "queries": len(final_queries),
         "pairs": len(final_pairs),
         "skipped_topic_collisions": skipped_topics,
         "skipped_empty_rows": skipped_empty,
-        "splits": {
-            name: sum(1 for query in final_queries if query["split"] == name)
-            for name in ("train", "validation", "test")
-        },
+        "value_negative_cap": int(config.get("value_negative_cap", 10)),
+        "splits": {"train": len(final_queries), "validation": 0, "test": 0},
     }
     logger.info("prepared %s", stats)
     return final_queries, final_pairs, stats
@@ -183,34 +171,64 @@ def assign_splits(query_ids: list[str], seed: int, train_ratio: float, val_ratio
     return splits
 
 
-def assign_topic_splits(topic_ids: list[str], seed: int, train_ratio: float, val_ratio: float) -> dict[str, str]:
-    """Put one third of the Coffman topics in test and the other two thirds in train or validation.
+def _topic_sort_key(topic_id: str) -> tuple:
+    text = str(topic_id)
+    if text.isdigit():
+        return (0, int(text))
+    return (1, text)
 
-    The two-thirds portion keeps the same train-to-validation ratio as the synthetic queries.
+
+def assign_topic_folds(topic_ids: list[str], seed: int, n_folds: int = 5) -> dict[str, int]:
+    """Deal topic ids into folds. Fifty topics become five folds of ten.
+
+    Fewer than five topics use one topic per fold, so a three-topic test still
+    has a defined assignment.
     """
-    ordered = sorted(topic_ids, key=lambda topic_id: (int(topic_id) if str(topic_id).isdigit() else str(topic_id)))
+    ordered = sorted({str(topic_id) for topic_id in topic_ids}, key=_topic_sort_key)
     if not ordered:
         return {}
     generator = random.Random(seed)
     generator.shuffle(ordered)
-    if len(ordered) == 1:
-        return {ordered[0]: "train"}
-    if len(ordered) == 2:
-        return {ordered[0]: "train", ordered[1]: "test"}
-    n_test = max(1, round(len(ordered) / 3))
-    n_test = min(n_test, len(ordered) - 2)
-    others = ordered[n_test:]
-    n_val = int(round(len(others) * val_ratio / (train_ratio + val_ratio)))
-    if n_val < 1:
-        n_val = 1
-    if n_val >= len(others):
-        n_val = len(others) - 1
-    splits = {}
+    if len(ordered) < n_folds:
+        return {topic_id: index for index, topic_id in enumerate(ordered)}
+    return {topic_id: index % n_folds for index, topic_id in enumerate(ordered)}
+
+
+def fold_roles(topic_ids: list[str], fold: int, seed: int, n_folds: int = 5) -> dict[str, str]:
+    """Role of every topic while training fold `fold`.
+
+    That fold's topics are the test set. Of the rest, eight choose the checkpoint
+    and the threshold when forty topics remain, and the other thirty-two train.
+    The shuffle of those remaining topics uses a fold-specific seed.
+    """
+    assignment = assign_topic_folds(topic_ids, seed, n_folds)
+    test_ids = [topic_id for topic_id, assigned in assignment.items() if assigned == fold]
+    others = sorted(
+        (topic_id for topic_id, assigned in assignment.items() if assigned != fold),
+        key=_topic_sort_key,
+    )
+    generator = random.Random(seed + 1000 + int(fold))
+    generator.shuffle(others)
+    n_validation = _validation_count(len(others))
+    roles = {topic_id: "test" for topic_id in test_ids}
     for index, topic_id in enumerate(others):
-        splits[topic_id] = "validation" if index < n_val else "train"
-    for topic_id in ordered[:n_test]:
-        splits[topic_id] = "test"
-    return splits
+        roles[topic_id] = "validation" if index < n_validation else "train"
+    return roles
+
+
+def _validation_count(n_other: int) -> int:
+    if n_other >= 40:
+        return 8
+    if n_other >= 2:
+        return 1
+    return 0
+
+
+def folds_for_topics(topic_ids: list[str], n_folds: int = 5) -> list[int]:
+    count = len({str(topic_id) for topic_id in topic_ids})
+    if count < n_folds:
+        return list(range(count))
+    return list(range(n_folds))
 
 
 def category_counts(pairs: list[dict]) -> dict[str, dict[str, int]]:
@@ -233,27 +251,17 @@ def build_topic_instances(
     examples: dict[str, list[str]],
     content_values: dict[str, list[str]],
     config: dict,
-) -> tuple[list[dict], list[dict], dict, dict[str, str]]:
-    """Turn Coffman topics into the same pair format as the synthetic queries.
+) -> tuple[list[dict], list[dict], dict, dict[str, int]]:
+    """Turn each Coffman keyword into index-hit instances and stamp its test fold.
 
-    Gold relations are the relations of the judged tuples. A cell in one of those
-    tuples is a positive attribute and a positive value when it contains a query
-    keyword. One third of the topics are test queries. The rest are train or validation.
+    Validation and test keep every value hit. The training cap is applied later,
+    when a fold selects its 32 training topics.
     """
-    rng = random.Random(int(config["seed"]))
-    value_pool = _content_pool(content_values, schema, int(config["max_value_chars"]))
-    relation_pool = [relation_text_record(schema.relations[name]) for name in sorted(schema.relations)]
-    attribute_pool = _attribute_pool(schema, examples)
-    split_of = assign_topic_splits(
-        [str(topic.topic_id) for topic in topics],
-        int(config["seed"]),
-        float(config["train_ratio"]),
-        float(config["val_ratio"]),
-    )
+    del examples, content_values
+    topic_ids = [str(topic.topic_id) for topic in topics]
+    folds = assign_topic_folds(topic_ids, int(config["seed"]), int(config.get("n_folds", 5)))
     search_map = _search_map(connection)
-    max_chars = int(config["max_value_chars"])
     queries: list[dict] = []
-    pairs: list[dict] = []
     skipped = 0
     for topic in topics:
         topic_id = str(topic.topic_id)
@@ -261,82 +269,68 @@ def build_topic_instances(
         if not keywords:
             keywords = [token for token in tokenize(topic.query) if token]
         relations: list[str] = []
-        attribute_keys: list[str] = []
-        keyword_values: list[tuple[str, str, str]] = []
         seen_relations: set[str] = set()
-        seen_attributes: set[str] = set()
-        seen_values: set[str] = set()
+        search_ids: list[int] = []
         for search_id in topic.search_ids:
             relation_name = search_map.get(int(search_id))
             if relation_name is None or relation_name not in schema.relations:
                 continue
+            search_ids.append(int(search_id))
             if relation_name not in seen_relations:
                 seen_relations.add(relation_name)
                 relations.append(relation_name)
-            row = _row_by_search_id(connection, relation_name, search_id)
-            if row is None:
-                continue
-            relation = schema.relations[relation_name]
-            for attribute in relation.keyword_attributes():
-                raw = row.get(attribute.name)
-                if raw is None or not str(raw).strip():
-                    continue
-                if not conflicts_with_keywords(str(raw), keywords):
-                    continue
-                attribute_key = f"{relation_name}.{attribute.name}"
-                if attribute_key not in seen_attributes:
-                    seen_attributes.add(attribute_key)
-                    attribute_keys.append(attribute_key)
-                element_id = value_element_id(relation_name, attribute.name, str(raw))
-                if element_id in seen_values:
-                    continue
-                seen_values.add(element_id)
-                keyword_values.append((relation_name, attribute.name, str(raw)))
-        if not relations:
+        if not relations or not keywords:
             skipped += 1
             continue
-        query_record = {
-            "query_id": f"t{int(topic_id):05d}",
-            "query": topic.query,
-            "source": "coffman",
-            "class_id": f"topic:{topic_id}",
-            "relations": relations,
-            "keyword_attributes": attribute_keys,
-            "keywords": keywords,
-            "split": split_of[topic_id],
-            "topic_id": topic_id,
-        }
-        pair_rows = _pairs_for_query(
-            schema,
-            examples,
-            query_record,
-            keyword_values,
-            relation_pool,
-            attribute_pool,
-            value_pool,
-            rng,
-            int(config["negatives_per_positive"]),
-            float(config["hard_negative_ratio"]),
-            max_chars,
+        queries.append(
+            {
+                "query_id": f"t{int(topic_id):05d}",
+                "query": topic.query,
+                "source": "coffman",
+                "class_id": f"topic:{topic_id}",
+                "relations": relations,
+                "keyword_attributes": [],
+                "keywords": keywords,
+                "keyword_sources": [
+                    {"keyword": keyword, "relation": "", "attribute": "", "value": ""} for keyword in keywords
+                ],
+                "topic_id": topic_id,
+                "fold": folds[topic_id],
+                "search_ids": search_ids,
+                "split": "coffman",
+            }
         )
-        if not pair_rows:
+    pairs = build_keyword_pairs(connection, schema, queries, config)
+    attributes_by_query: dict[str, set[str]] = defaultdict(set)
+    used_ids: set[str] = set()
+    for pair in pairs:
+        used_ids.add(pair["query_id"])
+        if pair["element_type"] == "attribute" and int(pair["label"]) == 1 and pair["attribute"]:
+            attributes_by_query[pair["query_id"]].add(f"{pair['relation']}.{pair['attribute']}")
+    kept_queries = []
+    for query in queries:
+        if query["query_id"] not in used_ids:
             skipped += 1
             continue
-        for pair in pair_rows:
-            pair["split"] = query_record["split"]
-        queries.append(query_record)
-        pairs.extend(pair_rows)
+        query["keyword_attributes"] = sorted(attributes_by_query.get(query["query_id"], ()))
+        kept_queries.append(query)
+    role_summary = {}
+    for fold in folds_for_topics(topic_ids, int(config.get("n_folds", 5))):
+        roles = fold_roles(topic_ids, fold, int(config["seed"]), int(config.get("n_folds", 5)))
+        role_summary[str(fold)] = {
+            name: sum(role == name for role in roles.values()) for name in ("train", "validation", "test")
+        }
     stats = {
         "topics": len(topics),
-        "topics_used": len(queries),
+        "topics_used": len(kept_queries),
         "topics_skipped": skipped,
         "pairs": len(pairs),
-        "splits": {
-            name: sum(1 for query in queries if query["split"] == name) for name in ("train", "validation", "test")
-        },
+        "folds": {str(fold): sum(assigned == fold for assigned in folds.values()) for fold in sorted(set(folds.values()))},
+        "fold_roles": role_summary,
+        "value_negative_cap": int(config.get("value_negative_cap", 10)),
     }
     logger.info("prepared coffman topics %s", stats)
-    return queries, pairs, stats, split_of
+    return kept_queries, pairs, stats, folds
 
 
 def _search_map(connection: sqlite3.Connection) -> dict[int, str]:
@@ -451,171 +445,326 @@ def _query_from_row(
     return keywords, attributes, values
 
 
-def _pairs_for_query(
+def cap_value_negatives(pairs: list[dict], seed: int, cap: int = 10) -> list[dict]:
+    """Keep every schema hit and every intended hit. Cap other value hits per keyword."""
+    grouped: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    order: list[tuple[str, str]] = []
+    for pair in pairs:
+        key = (str(pair["query_id"]), str(pair["keyword"]))
+        if key not in grouped:
+            order.append(key)
+        grouped[key].append(pair)
+    generator = random.Random(seed)
+    kept: list[dict] = []
+    for key in order:
+        rows = grouped[key]
+        negatives = [
+            row for row in rows if row["element_type"] == "value" and int(row["label"]) == 0
+        ]
+        rest = [
+            row for row in rows if not (row["element_type"] == "value" and int(row["label"]) == 0)
+        ]
+        if len(negatives) > cap:
+            negatives = sorted(negatives, key=lambda row: row["element_id"])
+            generator.shuffle(negatives)
+            negatives = negatives[:cap]
+        kept.extend(rest)
+        kept.extend(negatives)
+    return kept
+
+
+def build_keyword_pairs(
+    connection: sqlite3.Connection,
     schema: Schema,
-    examples: dict[str, list[str]],
+    queries: list[dict],
+    config: dict,
+) -> list[dict]:
+    """One row per keyword, query, and index hit."""
+    if not queries:
+        return []
+    keywords = [
+        source["keyword"]
+        for query in queries
+        for source in query.get("keyword_sources", [])
+        if source.get("keyword")
+    ]
+    index = _build_value_index(connection, schema, keywords, int(config["max_value_chars"]))
+    pairs: list[dict] = []
+    max_chars = int(config["max_value_chars"])
+    for query in queries:
+        for source in query.get("keyword_sources", []):
+            pairs.extend(_pairs_for_keyword(schema, query, source, index, max_chars))
+    synthetic = [pair for pair in pairs if pair.get("source") == "synthetic"]
+    other = [pair for pair in pairs if pair.get("source") != "synthetic"]
+    if synthetic:
+        synthetic = cap_value_negatives(
+            synthetic,
+            int(config["seed"]),
+            int(config.get("value_negative_cap", 10)),
+        )
+    return synthetic + other
+
+
+def select_fold_pairs(
+    pairs: list[dict],
+    topic_ids: list[str],
+    fold: int,
+    seed: int,
+    cap: int = 10,
+    n_folds: int = 5,
+) -> tuple[list[dict], list[dict], list[dict]]:
+    """Training pairs are capped. Validation and test keep every index hit."""
+    roles = fold_roles(topic_ids, fold, seed, n_folds)
+    train: list[dict] = []
+    validation: list[dict] = []
+    test: list[dict] = []
+    for pair in pairs:
+        if pair.get("source") == "synthetic":
+            train.append(pair)
+            continue
+        role = roles.get(str(pair.get("topic_id")))
+        if role == "train":
+            train.append(pair)
+        elif role == "validation":
+            validation.append(pair)
+        elif role == "test":
+            test.append(pair)
+    return cap_value_negatives(train, seed, cap), validation, test
+
+
+def _contains_keyword_tokens(text_tokens: list[str], key_tokens: list[str]) -> bool:
+    if not key_tokens:
+        return False
+    if len(key_tokens) == 1:
+        return key_tokens[0] in text_tokens
+    width = len(key_tokens)
+    for start in range(len(text_tokens) - width + 1):
+        if text_tokens[start : start + width] == key_tokens:
+            return True
+    return False
+
+
+def _name_matches(name: str, keyword: str) -> bool:
+    return tokenize(name) == tokenize(keyword)
+
+
+def _build_value_index(
+    connection: sqlite3.Connection,
+    schema: Schema,
+    keywords: list[str],
+    max_chars: int,
+) -> dict[str, dict[str, dict]]:
+    """Map a normalized keyword to the value and attribute elements that contain it."""
+    token_to_keywords: dict[str, set[str]] = defaultdict(set)
+    key_tokens: dict[str, list[str]] = {}
+    for keyword in keywords:
+        normalized = normalize_text(keyword)
+        if not normalized:
+            continue
+        tokens = tokenize(keyword)
+        if not tokens:
+            continue
+        key_tokens[normalized] = tokens
+        for token in set(tokens):
+            token_to_keywords[token].add(normalized)
+    index: dict[str, dict[str, dict]] = defaultdict(dict)
+    if not token_to_keywords:
+        return index
+    for relation_name in sorted(schema.relations):
+        relation = schema.relations[relation_name]
+        columns = relation.keyword_attributes()
+        if not columns:
+            continue
+        names = [attribute.name for attribute in columns]
+        has_search = any(attribute.name == "__search_id" for attribute in relation.attributes)
+        selected = names + (["__search_id"] if has_search else [])
+        statement = (
+            "SELECT "
+            + ", ".join(quote_ident(name) for name in selected)
+            + f" FROM {quote_ident(relation.name)}"
+        )
+        emit(f"prepare | indexing {relation.name}")
+        for row in connection.execute(statement):
+            search_id = int(row[-1]) if has_search and row[-1] is not None else None
+            values = row[:-1] if has_search else row
+            for attribute_name, raw in zip(names, values):
+                if raw is None:
+                    continue
+                text = str(raw).strip()
+                if not text or not any(character.isalpha() for character in text):
+                    continue
+                tokens = tokenize(text)
+                if not tokens:
+                    continue
+                matched: set[str] = set()
+                for token in set(tokens):
+                    matched.update(token_to_keywords.get(token, ()))
+                if not matched:
+                    continue
+                for normalized in matched:
+                    if not _contains_keyword_tokens(tokens, key_tokens[normalized]):
+                        continue
+                    _add_posting(
+                        index,
+                        normalized,
+                        _value_posting(relation.name, attribute_name, text, search_id, max_chars),
+                    )
+                    _add_posting(
+                        index,
+                        normalized,
+                        _attribute_posting(schema, relation, attribute_name, search_id),
+                    )
+    return index
+
+
+def _add_posting(index: dict[str, dict[str, dict]], keyword: str, posting: dict) -> None:
+    bucket = index[keyword]
+    existing = bucket.get(posting["element_id"])
+    if existing is None:
+        bucket[posting["element_id"]] = posting
+        return
+    existing["search_ids"].update(posting["search_ids"])
+
+
+def _value_posting(relation_name: str, attribute_name: str, value: str, search_id: int | None, max_chars: int) -> dict:
+    posting = {
+        "element_id": value_element_id(relation_name, attribute_name, value),
+        "element_type": "value",
+        "relation": relation_name,
+        "attribute": attribute_name,
+        "text": value_text(relation_name, attribute_name, value, max_chars),
+        "value": value,
+        "search_ids": set(),
+    }
+    if search_id is not None:
+        posting["search_ids"].add(int(search_id))
+    return posting
+
+
+def _attribute_posting(schema: Schema, relation: Relation, attribute_name: str, search_id: int | None) -> dict:
+    attribute = relation.attribute(attribute_name)
+    posting = {
+        "element_id": attribute_element_id(relation.name, attribute_name),
+        "element_type": "attribute",
+        "relation": relation.name,
+        "attribute": attribute_name,
+        "text": attribute_text(relation, attribute),
+        "value": "",
+        "search_ids": set(),
+    }
+    if search_id is not None:
+        posting["search_ids"].add(int(search_id))
+    return posting
+
+
+def _relation_posting(schema: Schema, relation: Relation) -> dict:
+    return {
+        "element_id": relation_element_id(relation.name),
+        "element_type": "relation",
+        "relation": relation.name,
+        "attribute": "",
+        "text": relation_text(relation, joined_relation_names(schema, relation.name)),
+        "value": "",
+        "search_ids": set(),
+    }
+
+
+def _hits_for_keyword(schema: Schema, index: dict[str, dict[str, dict]], keyword: str) -> dict[str, dict]:
+    merged: dict[str, dict] = {}
+    for posting in index.get(normalize_text(keyword), {}).values():
+        merged[posting["element_id"]] = posting
+    for relation_name in sorted(schema.relations):
+        relation = schema.relations[relation_name]
+        if _name_matches(relation.name, keyword):
+            posting = _relation_posting(schema, relation)
+            merged.setdefault(posting["element_id"], posting)
+        for attribute in relation.keyword_attributes():
+            if _name_matches(attribute.name, keyword):
+                posting = _attribute_posting(schema, relation, attribute.name, None)
+                merged.setdefault(posting["element_id"], posting)
+    return merged
+
+
+def _ensure_synthetic_intended(schema: Schema, source: dict, hits: dict[str, dict], max_chars: int) -> None:
+    relation_name = source.get("relation") or ""
+    attribute_name = source.get("attribute") or ""
+    value = source.get("value") or ""
+    if not relation_name or relation_name not in schema.relations:
+        return
+    relation = schema.relations[relation_name]
+    hits.setdefault(relation_element_id(relation_name), _relation_posting(schema, relation))
+    if attribute_name:
+        hits.setdefault(
+            attribute_element_id(relation_name, attribute_name),
+            _attribute_posting(schema, relation, attribute_name, None),
+        )
+    if attribute_name and value:
+        posting = _value_posting(relation_name, attribute_name, value, None, max_chars)
+        hits.setdefault(posting["element_id"], posting)
+
+
+def _label_hit(query: dict, source: dict, hit: dict, keyword: str) -> int:
+    if query.get("source") == "synthetic":
+        if hit["element_type"] == "value" and hit["element_id"] == value_element_id(
+            source.get("relation", ""), source.get("attribute", ""), source.get("value", "")
+        ):
+            return 1
+        if (
+            hit["element_type"] == "attribute"
+            and hit["relation"] == source.get("relation")
+            and hit["attribute"] == source.get("attribute")
+        ):
+            return 1
+        if hit["element_type"] == "relation" and hit["relation"] == source.get("relation"):
+            return 1
+        return 0
+    judged = {int(search_id) for search_id in query.get("search_ids", [])}
+    judged_relations = set(query.get("relations", []))
+    search_ids = {int(search_id) for search_id in hit.get("search_ids", ())}
+    if hit["element_type"] == "value":
+        return 1 if search_ids & judged else 0
+    if hit["element_type"] == "attribute":
+        name_match = _name_matches(hit["attribute"], keyword) and hit["relation"] in judged_relations
+        cell_match = bool(search_ids & judged)
+        return 1 if name_match or cell_match else 0
+    if hit["element_type"] == "relation":
+        return 1 if _name_matches(hit["relation"], keyword) and hit["relation"] in judged_relations else 0
+    return 0
+
+
+def _pairs_for_keyword(
+    schema: Schema,
     query: dict,
-    keyword_values: list[tuple[str, str, str]],
-    relation_pool: list[dict[str, str]],
-    attribute_pool: list[dict[str, str]],
-    value_pool: list[dict[str, str]],
-    rng: random.Random,
-    negatives_per_positive: int,
-    hard_negative_ratio: float,
+    source: dict,
+    index: dict[str, dict[str, dict]],
     max_chars: int,
 ) -> list[dict]:
-    keywords: list[str] = query["keywords"]
-    class_relations = set(query["relations"])
-    keyword_attributes = set(query["keyword_attributes"])
-    positives: list[dict] = []
-    for relation_name in query["relations"]:
-        relation = schema.relations[relation_name]
-        positives.append(
-            _pair(query, relation_element_id(relation_name), "relation", relation_name, "", relation_text(relation), 1)
-        )
-    for attribute_key in query["keyword_attributes"]:
-        relation_name, attribute_name = attribute_key.split(".", 1)
-        relation = schema.relations[relation_name]
-        attribute = relation.attribute(attribute_name)
-        text = attribute_text(relation, attribute, examples.get(attribute_key, []), keywords)
-        positives.append(
-            _pair(query, attribute_element_id(relation_name, attribute_name), "attribute", relation_name, attribute_name, text, 1)
-        )
-    for relation_name, attribute_name, raw in keyword_values:
-        positives.append(
+    keyword = source.get("keyword") or ""
+    if not keyword:
+        return []
+    hits = _hits_for_keyword(schema, index, keyword)
+    if query.get("source") == "synthetic":
+        _ensure_synthetic_intended(schema, source, hits, max_chars)
+    pairs = []
+    for hit in hits.values():
+        pairs.append(
             _pair(
                 query,
-                value_element_id(relation_name, attribute_name, raw),
-                "value",
-                relation_name,
-                attribute_name,
-                value_text(relation_name, attribute_name, raw, max_chars),
-                1,
+                keyword,
+                hit["element_id"],
+                hit["element_type"],
+                hit["relation"],
+                hit["attribute"],
+                hit["text"],
+                _label_hit(query, source, hit, keyword),
             )
         )
-    positive_ids = {item["element_id"] for item in positives}
-    query_tokens = content_tokens(query["query"])
-    n_negative = negatives_per_positive * len(positives)
-    n_hard = int(round(n_negative * hard_negative_ratio))
-    negatives = _sample_negatives(
-        query,
-        positive_ids,
-        class_relations,
-        keyword_attributes,
-        relation_pool,
-        attribute_pool,
-        value_pool,
-        query_tokens,
-        keywords,
-        n_hard,
-        n_negative - n_hard,
-        rng,
-        examples,
-        schema,
-        max_chars,
-    )
-    return positives + negatives
-
-
-def _sample_negatives(
-    query: dict,
-    positive_ids: set[str],
-    class_relations: set[str],
-    keyword_attributes: set[str],
-    relation_pool: list[dict[str, str]],
-    attribute_pool: list[dict[str, str]],
-    value_pool: list[dict[str, str]],
-    query_tokens: set[str],
-    keywords: list[str],
-    n_hard: int,
-    n_random: int,
-    rng: random.Random,
-    examples: dict[str, list[str]],
-    schema: Schema,
-    max_chars: int,
-) -> list[dict]:
-    hard: list[dict] = []
-    random_pool: list[dict] = []
-    for record in relation_pool:
-        if record["element_id"] in positive_ids or record["relation"] in class_relations:
-            continue
-        rendered = dict(record)
-        if query_tokens & content_tokens(rendered["text"]):
-            hard.append(rendered)
-        else:
-            random_pool.append(rendered)
-    for record in attribute_pool:
-        attribute_key = f"{record['relation']}.{record['attribute']}"
-        if record["element_id"] in positive_ids or attribute_key in keyword_attributes:
-            continue
-        relation = schema.relations[record["relation"]]
-        attribute = relation.attribute(record["attribute"])
-        text = attribute_text(relation, attribute, examples.get(attribute_key, []), keywords)
-        rendered = dict(record)
-        rendered["text"] = text
-        if query_tokens & content_tokens(text):
-            hard.append(rendered)
-        else:
-            random_pool.append(rendered)
-    keyword_norms = {normalize_text(keyword) for keyword in keywords}
-    for record in value_pool:
-        if record["element_id"] in positive_ids:
-            continue
-        normalized_value = normalize_text(record.get("value", ""))
-        contains_keyword = any(keyword and keyword in normalized_value for keyword in keyword_norms)
-        shares_token = bool(query_tokens & content_tokens(record.get("value", "")))
-        if shares_token or contains_keyword:
-            hard.append(record)
-        elif not contains_keyword:
-            random_pool.append(record)
-    rng.shuffle(hard)
-    rng.shuffle(random_pool)
-    chosen: list[dict] = []
-    used: set[str] = set(positive_ids)
-    for source, count in ((hard, n_hard), (random_pool, n_random)):
-        if count <= 0:
-            continue
-        for record in source:
-            if record["element_id"] in used:
-                continue
-            chosen.append(
-                _pair(
-                    query,
-                    record["element_id"],
-                    record["element_type"],
-                    record["relation"],
-                    record.get("attribute", ""),
-                    record["text"],
-                    0,
-                )
-            )
-            used.add(record["element_id"])
-            count -= 1
-            if count == 0:
-                break
-    if len(chosen) < n_hard + n_random:
-        for record in hard + random_pool:
-            if record["element_id"] in used:
-                continue
-            chosen.append(
-                _pair(
-                    query,
-                    record["element_id"],
-                    record["element_type"],
-                    record["relation"],
-                    record.get("attribute", ""),
-                    record["text"],
-                    0,
-                )
-            )
-            used.add(record["element_id"])
-            if len(chosen) >= n_hard + n_random:
-                break
-    return chosen
+    return pairs
 
 
 def _pair(
     query: dict,
+    keyword: str,
     element_id: str,
     element_type: str,
     relation: str,
@@ -626,6 +775,7 @@ def _pair(
     return {
         "query_id": query["query_id"],
         "query": query["query"],
+        "keyword": keyword,
         "element_id": element_id,
         "element_type": element_type,
         "relation": relation,
@@ -634,50 +784,10 @@ def _pair(
         "label": label,
         "class_id": query["class_id"],
         "source": query.get("source", "synthetic"),
+        "topic_id": query.get("topic_id", ""),
+        "fold": query.get("fold"),
+        "split": query.get("split", "train"),
     }
-
-
-def _attribute_pool(schema: Schema, examples: dict[str, list[str]]) -> list[dict[str, str]]:
-    pool = []
-    for relation_name in sorted(schema.relations):
-        relation = schema.relations[relation_name]
-        for attribute in relation.keyword_attributes():
-            key = f"{relation.name}.{attribute.name}"
-            pool.append(
-                {
-                    "element_id": attribute_element_id(relation.name, attribute.name),
-                    "element_type": "attribute",
-                    "relation": relation.name,
-                    "attribute": attribute.name,
-                    "text": attribute_text(relation, attribute, examples.get(key, [])),
-                }
-            )
-    return pool
-
-
-def _content_pool(examples: dict[str, list[str]], schema: Schema, max_chars: int) -> list[dict[str, str]]:
-    pool = []
-    seen: set[str] = set()
-    for key, values in examples.items():
-        relation_name, attribute_name = key.split(".", 1)
-        if relation_name not in schema.relations:
-            continue
-        for value in values:
-            element_id = value_element_id(relation_name, attribute_name, value)
-            if element_id in seen:
-                continue
-            seen.add(element_id)
-            pool.append(
-                {
-                    "element_id": element_id,
-                    "element_type": "value",
-                    "relation": relation_name,
-                    "attribute": attribute_name,
-                    "value": value,
-                    "text": value_text(relation_name, attribute_name, value, max_chars),
-                }
-            )
-    return pool
 
 
 def _sample_column(

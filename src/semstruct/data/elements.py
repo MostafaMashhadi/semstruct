@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from semstruct.data.schema import Attribute, Relation, Schema
+from semstruct.data.schema import Attribute, Relation, Schema, schema_graph
 
 STOPWORDS = frozenset(
     """
@@ -84,55 +84,66 @@ def reference_label(relation: Relation, attribute_name: str) -> str | None:
     return "; ".join(labels)
 
 
-def relation_text(relation: Relation) -> str:
-    attributes = ", ".join(attribute.name for attribute in relation.attributes)
-    parts = [f"[RELATION] name: {relation.name}", f"attributes: {attributes}"]
-    if relation.primary_key:
-        parts.append("primary key: " + ", ".join(relation.primary_key))
-    if relation.foreign_keys:
-        edges = []
-        for foreign_key in relation.foreign_keys:
-            source = ", ".join(foreign_key.columns)
-            target = f"{foreign_key.ref_table}({', '.join(foreign_key.ref_columns)})"
-            edges.append(f"{source} -> {target}")
-        parts.append("foreign keys: " + "; ".join(edges))
+def key_role(relation: Relation, attribute: Attribute) -> str:
+    """Primary key, foreign key, or both. Empty when the attribute has neither role."""
+    roles: list[str] = []
+    if attribute.primary_key or attribute.name in relation.primary_key:
+        roles.append("primary key")
+    if any(attribute.name in foreign_key.columns for foreign_key in relation.foreign_keys):
+        roles.append("foreign key")
+    return ", ".join(roles) if roles else "none"
+
+
+def joined_relation_names(schema: Schema, relation_name: str) -> list[str]:
+    return sorted(schema_graph(schema).get(relation_name, ()))
+
+
+def relation_text(relation: Relation, joined: list[str] | None = None) -> str:
+    """Name, comment when the dump has one, attribute names, and joined relations."""
+    attributes = ", ".join(
+        attribute.name for attribute in relation.attributes if attribute.name != "__search_id"
+    )
+    parts = [f"name: {relation.name}"]
     if relation.comment:
         parts.append(f"description: {relation.comment}")
+    parts.append(f"attributes: {attributes}")
+    if joined:
+        parts.append("joined: " + ", ".join(joined))
     return " | ".join(parts)
 
 
 def attribute_text(
     relation: Relation,
     attribute: Attribute,
-    examples: list[str],
+    examples: list[str] | None = None,
     query_keywords: list[str] | None = None,
 ) -> str:
-    keywords = query_keywords or []
-    safe = [example for example in examples if not conflicts_with_keywords(example, keywords)]
+    """Name, type, key role, comment when present, and the containing relation.
+
+    Example values are not part of this card. The optional arguments remain so
+    older callers keep working.
+    """
+    del examples, query_keywords
     parts = [
-        f"[ATTRIBUTE] name: {relation.name}.{attribute.name}",
+        f"name: {attribute.name}",
         f"type: {attribute.data_type}",
-        f"relation: {relation.name}",
+        f"key: {key_role(relation, attribute)}",
     ]
-    refers_to = reference_label(relation, attribute.name)
-    if refers_to:
-        parts.append(f"refers to: {refers_to}")
-    if safe:
-        parts.append("example values: " + "; ".join(safe))
+    comment = getattr(attribute, "comment", None)
+    if comment:
+        parts.append(f"description: {comment}")
+    parts.append(f"relation: {relation.name}")
     return " | ".join(parts)
 
 
 def value_text(relation_name: str, attribute_name: str, value: str, max_chars: int) -> str:
+    """The cell, its attribute, and its relation."""
     shown = re.sub(r"\s+", " ", str(value).replace("\n", " ")).strip()
     if len(shown) > max_chars:
         shown = shown[:max_chars]
-    normalized = normalize_text(shown)
-    parts = [f'[VALUE] "{shown}"']
-    if normalized and normalized != shown.lower():
-        parts.append(f"normalized: {normalized}")
-    parts.append(f"attribute: {relation_name}.{attribute_name}")
-    parts.append(f"relation: {relation_name}")
-    return " | ".join(parts)
+    return (
+        f"value: {shown} | attribute: {relation_name}.{attribute_name} | relation: {relation_name}"
+    )
 
 
 def relation_element_id(relation_name: str) -> str:
@@ -147,7 +158,8 @@ def value_element_id(relation_name: str, attribute_name: str, value: str) -> str
     return f"value:{relation_name}.{attribute_name}:{normalize_text(value)}"
 
 
-def schema_element_records(schema: Schema, examples: dict[str, list[str]]) -> list[dict[str, str]]:
+def schema_element_records(schema: Schema, examples: dict[str, list[str]] | None = None) -> list[dict[str, str]]:
+    del examples
     records = []
     for relation_name in sorted(schema.relations):
         relation = schema.relations[relation_name]
@@ -157,18 +169,17 @@ def schema_element_records(schema: Schema, examples: dict[str, list[str]]) -> li
                 "element_type": "relation",
                 "relation": relation.name,
                 "attribute": "",
-                "text": relation_text(relation),
+                "text": relation_text(relation, joined_relation_names(schema, relation.name)),
             }
         )
         for attribute in relation.keyword_attributes():
-            key = f"{relation.name}.{attribute.name}"
             records.append(
                 {
                     "element_id": attribute_element_id(relation.name, attribute.name),
                     "element_type": "attribute",
                     "relation": relation.name,
                     "attribute": attribute.name,
-                    "text": attribute_text(relation, attribute, examples.get(key, [])),
+                    "text": attribute_text(relation, attribute),
                 }
             )
     return records

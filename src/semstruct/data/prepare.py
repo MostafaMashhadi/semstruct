@@ -13,7 +13,8 @@ from semstruct.data.elements import schema_element_records
 from semstruct.data.instances import build_instances, build_topic_instances, category_counts, sample_example_values
 from semstruct.data.query_classes import select_query_classes
 from semstruct.data.topics import extract_topics, load_topics, topic_query_norms
-from semstruct.paths import processed_dir
+from semstruct.paths import output_dir, processed_dir
+from semstruct.runlog import emit, format_prepare
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,8 @@ def prepare_dataset(dataset: str, config: dict, root: Path | None = None, rebuil
     destination.mkdir(parents=True, exist_ok=True)
     sqlite_path = destination / "database.sqlite"
     schema_path = destination / "schema.json"
-    if rebuild or not sqlite_path.exists() or not schema_path.exists():
+    reused = not rebuild and sqlite_path.exists() and schema_path.exists()
+    if not reused:
         logger.info("loading %s into %s", dataset, sqlite_path)
         schema = load_sqlite(files["schema"], files["data"], sqlite_path)
         payload = schema.as_dict()
@@ -101,7 +103,7 @@ def prepare_dataset(dataset: str, config: dict, root: Path | None = None, rebuil
     topic_rows = []
     for topic in topics:
         row = topic.as_dict()
-        row["split"] = topic_splits.get(str(topic.topic_id), "train")
+        row["fold"] = topic_splits.get(str(topic.topic_id))
         topic_rows.append(row)
     write_jsonl(destination / "topics.jsonl", topic_rows)
 
@@ -111,8 +113,30 @@ def prepare_dataset(dataset: str, config: dict, root: Path | None = None, rebuil
     stats["dataset"] = dataset
     stats["topics"] = len(topics)
     stats["relations"] = len(schema.relations)
+    stats["reused_sqlite"] = reused
     (destination / "prepare_stats.json").write_text(json.dumps(stats, indent=2), encoding="utf-8")
-    logger.info("wrote %s pairs for %s", stats["pairs"], dataset)
+    report_dir = output_dir(dataset, root)
+    report_dir.mkdir(parents=True, exist_ok=True)
+    (report_dir / "prepare_stats.json").write_text(json.dumps(stats, indent=2), encoding="utf-8")
+    roles = (stats.get("coffman") or {}).get("fold_roles", {}).get("0", {})
+    emit(
+        format_prepare(
+            dataset,
+            reused,
+            int(stats.get("synthetic_queries", stats.get("queries", 0))),
+            int(stats.get("synthetic_pairs", 0)),
+            int(stats.get("topics", 0)),
+            int((stats.get("coffman") or {}).get("pairs", 0)),
+            int(roles.get("train", 0)),
+            int(roles.get("validation", 0)),
+            int(roles.get("test", 0)),
+            destination / "pairs.jsonl",
+        ),
+        report_dir / "prepare.log",
+    )
+    from semstruct.reports import refresh_reports
+
+    refresh_reports(root)
     return stats
 
 

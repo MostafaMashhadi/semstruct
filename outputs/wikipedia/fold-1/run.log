@@ -1,0 +1,23 @@
+wikipedia | fold 1 of 5 | train | device mps | seed 42 | train pairs 4170 | topics 32 train, 8 validation, 10 test | epochs 3 | batch 16 | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/models/wikipedia/fold-1
+wikipedia | fold 1 of 5 | step 50/783 | epoch 0.19 | loss 0.5628
+wikipedia | fold 1 of 5 | step 100/783 | epoch 0.38 | loss 0.4252
+wikipedia | fold 1 of 5 | step 150/783 | epoch 0.57 | loss 0.3458
+wikipedia | fold 1 of 5 | step 200/783 | epoch 0.77 | loss 0.3429
+wikipedia | fold 1 of 5 | step 250/783 | epoch 0.96 | loss 0.2983
+wikipedia | fold 1 of 5 | epoch 1 | validation precision 0.345 | recall 0.557 | f1 0.426 | best
+wikipedia | fold 1 of 5 | step 300/783 | epoch 1.15 | loss 0.3003
+wikipedia | fold 1 of 5 | step 350/783 | epoch 1.34 | loss 0.2548
+wikipedia | fold 1 of 5 | step 400/783 | epoch 1.53 | loss 0.2714
+wikipedia | fold 1 of 5 | step 450/783 | epoch 1.72 | loss 0.2453
+wikipedia | fold 1 of 5 | step 500/783 | epoch 1.92 | loss 0.2589
+wikipedia | fold 1 of 5 | epoch 2 | validation precision 0.336 | recall 0.543 | f1 0.415
+wikipedia | fold 1 of 5 | step 550/783 | epoch 2.11 | loss 0.2015
+wikipedia | fold 1 of 5 | step 600/783 | epoch 2.30 | loss 0.1979
+wikipedia | fold 1 of 5 | step 650/783 | epoch 2.49 | loss 0.1840
+wikipedia | fold 1 of 5 | step 700/783 | epoch 2.68 | loss 0.1993
+wikipedia | fold 1 of 5 | step 750/783 | epoch 2.87 | loss 0.1720
+wikipedia | fold 1 of 5 | epoch 3 | validation precision 0.336 | recall 0.543 | f1 0.415
+wikipedia | fold 1 of 5 | early stop | epoch 3 | patience 2
+wikipedia | fold 1 of 5 | saved | best validation f1 0.426 | step 261 | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/models/wikipedia/fold-1 | elapsed 345s
+wikipedia | fold 1 of 5 | evaluate | fine-tuned | threshold 0.433 | test topics 10 | precision 0.112 | recall 0.545 | f1 0.186 | scoring 10346.4 ms
+wikipedia | fold 1 of 5 | evaluate | pre-trained | threshold 0.800 | test topics 10 | precision 0.013 | recall 0.455 | f1 0.025 | scoring 11064.4 ms

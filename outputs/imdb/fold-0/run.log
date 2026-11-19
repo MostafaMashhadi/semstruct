@@ -1,0 +1,32 @@
+imdb | fold 0 of 5 | train | device mps | seed 42 | train pairs 6864 | topics 32 train, 8 validation, 10 test | epochs 3 | batch 16 | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/models/imdb/fold-0
+imdb | fold 0 of 5 | step 50/1287 | epoch 0.12 | loss 0.5944
+imdb | fold 0 of 5 | step 100/1287 | epoch 0.23 | loss 0.5004
+imdb | fold 0 of 5 | step 150/1287 | epoch 0.35 | loss 0.4255
+imdb | fold 0 of 5 | step 200/1287 | epoch 0.47 | loss 0.4269
+imdb | fold 0 of 5 | step 250/1287 | epoch 0.58 | loss 0.3813
+imdb | fold 0 of 5 | step 300/1287 | epoch 0.70 | loss 0.3866
+imdb | fold 0 of 5 | step 350/1287 | epoch 0.82 | loss 0.3880
+imdb | fold 0 of 5 | step 400/1287 | epoch 0.93 | loss 0.3605
+imdb | fold 0 of 5 | epoch 1 | validation precision 0.057 | recall 0.275 | f1 0.094 | best
+imdb | fold 0 of 5 | step 450/1287 | epoch 1.05 | loss 0.3341
+imdb | fold 0 of 5 | step 500/1287 | epoch 1.17 | loss 0.2786
+imdb | fold 0 of 5 | step 550/1287 | epoch 1.28 | loss 0.3003
+imdb | fold 0 of 5 | step 600/1287 | epoch 1.40 | loss 0.3039
+imdb | fold 0 of 5 | step 650/1287 | epoch 1.52 | loss 0.2523
+imdb | fold 0 of 5 | step 700/1287 | epoch 1.63 | loss 0.2617
+imdb | fold 0 of 5 | step 750/1287 | epoch 1.75 | loss 0.2915
+imdb | fold 0 of 5 | step 800/1287 | epoch 1.86 | loss 0.2834
+imdb | fold 0 of 5 | step 850/1287 | epoch 1.98 | loss 0.2792
+imdb | fold 0 of 5 | epoch 2 | validation precision 0.150 | recall 0.725 | f1 0.249 | best
+imdb | fold 0 of 5 | step 900/1287 | epoch 2.10 | loss 0.1973
+imdb | fold 0 of 5 | step 950/1287 | epoch 2.21 | loss 0.2289
+imdb | fold 0 of 5 | step 1000/1287 | epoch 2.33 | loss 0.2026
+imdb | fold 0 of 5 | step 1050/1287 | epoch 2.45 | loss 0.1929
+imdb | fold 0 of 5 | step 1100/1287 | epoch 2.56 | loss 0.1967
+imdb | fold 0 of 5 | step 1150/1287 | epoch 2.68 | loss 0.2242
+imdb | fold 0 of 5 | step 1200/1287 | epoch 2.80 | loss 0.2010
+imdb | fold 0 of 5 | step 1250/1287 | epoch 2.91 | loss 0.1696
+imdb | fold 0 of 5 | epoch 3 | validation precision 0.167 | recall 0.804 | f1 0.276 | best
+imdb | fold 0 of 5 | saved | best validation f1 0.276 | step 1287 | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/models/imdb/fold-0 | elapsed 411s
+imdb | fold 0 of 5 | evaluate | fine-tuned | threshold 0.358 | test topics 10 | precision 0.032 | recall 0.570 | f1 0.060 | scoring 58799.3 ms
+imdb | fold 0 of 5 | evaluate | pre-trained | threshold 0.771 | test topics 10 | precision 0.000 | recall 0.796 | f1 0.001 | scoring 63788.0 ms

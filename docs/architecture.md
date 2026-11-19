@@ -5,8 +5,8 @@ SemStruct has an offline adaptation stage and an online query stage. This reposi
 ```mermaid
 flowchart LR
   dumps[Benchmark dumps] --> sqlite[SQLite schema and content]
-  sqlite --> classes[Query classes]
-  classes --> pairs[Query element pairs]
+  sqlite --> classes[Query classes and Coffman topics]
+  classes --> pairs[Keyword query element instances]
   pairs --> tune[DistilBERT fine-tune]
   tune --> model[One model per database]
   model --> rank[Element and class scores]
@@ -19,9 +19,9 @@ The offline stage fits a pre-trained DistilBERT model to one relational database
 1. Read relations, attributes, types, primary keys, foreign keys, and comments when the dump has them.
 2. Keep a SQLite copy of the rows so later sampling does not need PostgreSQL.
 3. Enumerate query classes: connected sets of one, two, or three relations in the foreign-key graph.
-4. Draw keyword queries from short text cells in those classes.
-5. Fine-tune DistilBERT as a binary classifier of `(query, element)` pairs.
-6. Store the checkpoint, the schema, the example-value lists, and the run configuration.
+4. Draw keyword queries from short text cells in those classes, and load the 50 Coffman topics.
+5. Fine-tune DistilBERT on `(keyword, query, element)` instances with one linear unit and binary cross-entropy. Five folds rotate which 10 Coffman topics are held out.
+6. Store one checkpoint per fold, the schema, and the run record.
 
 Each database gets its own model. A Mondial model is not used on IMDb.
 
@@ -31,11 +31,11 @@ An element is one of three things.
 
 | Element | What it stands for | Text given to the model |
 | --- | --- | --- |
-| Relation | A table | Name, attributes, keys, foreign keys, comment if present |
-| Attribute | A text column | `relation.attribute`, type, referenced column, a few example values |
+| Relation | A table | Name, comment when the dump has one, attribute names, and joined relations |
+| Attribute | A text column | Name, type, key role, comment when present, and its relation |
 | Value | A cell | The cell text, its attribute, and its relation |
 
-Example values that repeat a keyword of the current query are removed from that pair's attribute text. The value element still contains the cell, because recognizing the cell is part of the task. The rule is specified in [training.md](training.md).
+These Coffman dumps have no relation comments, so the description line is absent. The labeling rule is specified in [training.md](training.md).
 
 ## Online query processing
 
@@ -52,6 +52,4 @@ A query-class score is the mean relevance probability of the class's relations a
 
 ## What this version evaluates
 
-The experiments measure the classifier: pair classification, ranking of the paired candidates, ranking of schema elements, and ranking of query classes. The test queries are a mix of held-out synthetic queries and one third of the Coffman topics. The other two thirds of the topics are training and validation pairs. On the held-out topics the run also measures whether the relations of the judged tuples are ranked above other relations. Every split contains relation, attribute, and value pairs. These three dumps have no relation comments, so a description is not a separate sample.
-
-They do not measure candidate-network workload or end-to-end retrieval time. Those measurements wait on the network generator.
+The experiments measure the ranker. Each fold holds out 10 of the 50 Coffman topics. Eight of the remaining topics choose the checkpoint and the decision threshold, and 32 train, together with every synthetic instance. A hit at or above that threshold is retrieved. Precision, recall, and F1 are pooled over all 50 topics. Scoring time is the mean time to score one test query's index hits. The pre-trained row is a frozen [CLS] cosine on the same texts. These numbers are ranker results. They do not measure candidate-network workload or end-to-end retrieval time.

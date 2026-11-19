@@ -1,0 +1,128 @@
+{
+  "classes": 18,
+  "queries": 318,
+  "pairs": 791459,
+  "skipped_topic_collisions": 0,
+  "skipped_empty_rows": 28,
+  "value_negative_cap": 10,
+  "splits": {
+    "train": 268,
+    "validation": 0,
+    "test": 0
+  },
+  "synthetic_queries": 268,
+  "synthetic_pairs": 5334,
+  "coffman": {
+    "topics": 50,
+    "topics_used": 50,
+    "topics_skipped": 0,
+    "pairs": 786125,
+    "folds": {
+      "0": 10,
+      "1": 10,
+      "2": 10,
+      "3": 10,
+      "4": 10
+    },
+    "fold_roles": {
+      "0": {
+        "train": 32,
+        "validation": 8,
+        "test": 10
+      },
+      "1": {
+        "train": 32,
+        "validation": 8,
+        "test": 10
+      },
+      "2": {
+        "train": 32,
+        "validation": 8,
+        "test": 10
+      },
+      "3": {
+        "train": 32,
+        "validation": 8,
+        "test": 10
+      },
+      "4": {
+        "train": 32,
+        "validation": 8,
+        "test": 10
+      }
+    },
+    "value_negative_cap": 10
+  },
+  "categories": {
+    "relation": {
+      "positive": 534,
+      "negative": 0,
+      "total": 534
+    },
+    "attribute": {
+      "positive": 687,
+      "negative": 2089,
+      "total": 2776
+    },
+    "value": {
+      "positive": 709,
+      "negative": 787440,
+      "total": 788149
+    },
+    "all": {
+      "positive": 1930,
+      "negative": 789529,
+      "total": 791459
+    }
+  },
+  "categories_by_source": {
+    "synthetic": {
+      "relation": {
+        "positive": 514,
+        "negative": 0,
+        "total": 514
+      },
+      "attribute": {
+        "positive": 514,
+        "negative": 1518,
+        "total": 2032
+      },
+      "value": {
+        "positive": 514,
+        "negative": 2274,
+        "total": 2788
+      },
+      "all": {
+        "positive": 1542,
+        "negative": 3792,
+        "total": 5334
+      }
+    },
+    "coffman": {
+      "relation": {
+        "positive": 20,
+        "negative": 0,
+        "total": 20
+      },
+      "attribute": {
+        "positive": 173,
+        "negative": 571,
+        "total": 744
+      },
+      "value": {
+        "positive": 195,
+        "negative": 785166,
+        "total": 785361
+      },
+      "all": {
+        "positive": 388,
+        "negative": 785737,
+        "total": 786125
+      }
+    }
+  },
+  "dataset": "imdb",
+  "topics": 50,
+  "relations": 6,
+  "reused_sqlite": true
+}

@@ -1,0 +1,10 @@
+{
+  "dataset": "mondial",
+  "device": "mps",
+  "batch_size": 16,
+  "learning_rate": 0.0001,
+  "steps": 30,
+  "initial_loss": 0.7044544219970703,
+  "final_loss": 0.0010363305918872356,
+  "decreased": true
+}

@@ -5,9 +5,12 @@ from semstruct.data.dump import load_sqlite
 from semstruct.data.elements import normalize_text
 from semstruct.data.instances import (
     assign_splits,
-    assign_topic_splits,
+    assign_topic_folds,
     build_instances,
+    build_keyword_pairs,
     build_topic_instances,
+    cap_value_negatives,
+    fold_roles,
     sample_example_values,
 )
 from semstruct.data.topics import Topic
@@ -41,6 +44,7 @@ DATA = (
     "Bern\tCH\t3\n"
     "Paris\tFR\t4\n"
     "Zurich\tCH\t5\n"
+    "France\tFR\t8\n"
     "\\.\n"
     "COPY river (name, country, __search_id) FROM stdin;\n"
     "Rhine\tCH\t6\n"
@@ -64,6 +68,8 @@ CONFIG = {
     "join_timeout_seconds": 5,
     "train_ratio": 0.8,
     "val_ratio": 0.1,
+    "value_negative_cap": 10,
+    "n_folds": 5,
 }
 
 
@@ -91,13 +97,36 @@ def _build(tmp_path: Path):
     return schema, classes, queries, pairs
 
 
-def test_one_third_of_topics_are_held_for_test():
+def test_fifty_topics_split_ten_eight_thirty_two():
     topic_ids = [str(index) for index in range(1, 51)]
-    splits = assign_topic_splits(topic_ids, seed=42, train_ratio=0.8, val_ratio=0.1)
-    assert set(splits) == set(topic_ids)
-    assert sum(split == "test" for split in splits.values()) == 17
-    assert sum(split != "test" for split in splits.values()) == 33
-    assert set(splits.values()) == {"train", "validation", "test"}
+    folds = assign_topic_folds(topic_ids, seed=42)
+    assert set(folds) == set(topic_ids)
+    assert sorted(folds.values()).count(0) == 10
+    assert {fold: list(folds.values()).count(fold) for fold in range(5)} == {0: 10, 1: 10, 2: 10, 3: 10, 4: 10}
+    tested = []
+    for fold in range(5):
+        roles = fold_roles(topic_ids, fold, seed=42)
+        assert sum(role == "test" for role in roles.values()) == 10
+        assert sum(role == "validation" for role in roles.values()) == 8
+        assert sum(role == "train" for role in roles.values()) == 32
+        tested.extend(topic_id for topic_id, role in roles.items() if role == "test")
+        assert {topic_id for topic_id, assigned in folds.items() if assigned == fold} == {
+            topic_id for topic_id, role in roles.items() if role == "test"
+        }
+    assert sorted(tested, key=int) == topic_ids
+
+
+def test_value_negatives_are_capped_at_ten():
+    pairs = [
+        {"query_id": "q", "keyword": "france", "element_type": "value", "label": 0, "element_id": f"v{index}"}
+        for index in range(25)
+    ]
+    pairs.append({"query_id": "q", "keyword": "france", "element_type": "value", "label": 1, "element_id": "gold"})
+    pairs.append({"query_id": "q", "keyword": "france", "element_type": "relation", "label": 0, "element_id": "rel"})
+    capped = cap_value_negatives(pairs, seed=42, cap=10)
+    assert sum(pair["element_type"] == "value" and pair["label"] == 0 for pair in capped) == 10
+    assert any(pair["element_id"] == "gold" for pair in capped)
+    assert any(pair["element_id"] == "rel" for pair in capped)
 
 
 def test_coffman_topic_becomes_relation_attribute_and_value_pairs(tmp_path: Path):
@@ -115,7 +144,7 @@ def test_coffman_topic_becomes_relation_attribute_and_value_pairs(tmp_path: Path
         Topic(topic_id="2", query="switzerland", search_ids=[1]),
         Topic(topic_id="3", query="rhine", search_ids=[6]),
     ]
-    queries, pairs, _stats, splits = build_topic_instances(
+    queries, pairs, _stats, folds = build_topic_instances(
         connection,
         schema,
         topics,
@@ -124,17 +153,26 @@ def test_coffman_topic_becomes_relation_attribute_and_value_pairs(tmp_path: Path
         CONFIG,
     )
     connection.close()
-    assert set(splits.values()) == {"train", "validation", "test"}
-    assert sum(split == "test" for split in splits.values()) == 1
+    assert set(folds.values()) == {0, 1, 2}
     france = next(query for query in queries if query["query"] == "france")
     assert france["source"] == "coffman"
-    france_pairs = [pair for pair in pairs if pair["query_id"] == france["query_id"]]
-    positives = {(pair["element_type"], pair["label"]) for pair in france_pairs}
-    assert ("relation", 1) in positives
-    assert ("attribute", 1) in positives
-    assert ("value", 1) in positives
-    assert any(pair["label"] == 0 for pair in france_pairs)
-    assert {pair["split"] for pair in france_pairs} == {france["split"]}
+    france_pairs = [pair for pair in pairs if pair["query_id"] == france["query_id"] and pair["keyword"] == "france"]
+    assert france_pairs
+    assert {pair["fold"] for pair in france_pairs} == {france["fold"]}
+    values = {
+        (pair["relation"], pair["attribute"], pair["label"])
+        for pair in france_pairs
+        if pair["element_type"] == "value"
+    }
+    assert ("country", "name", 1) in values
+    assert ("city", "name", 0) in values
+    attributes = {
+        (pair["relation"], pair["attribute"], pair["label"])
+        for pair in france_pairs
+        if pair["element_type"] == "attribute"
+    }
+    assert ("country", "name", 1) in attributes
+    assert ("city", "name", 0) in attributes
 
 
 def test_splits_are_query_disjoint():
@@ -147,27 +185,57 @@ def test_labels_match_query_classes_and_examples_do_not_leak(tmp_path: Path):
     _schema, _classes, queries, pairs = _build(tmp_path)
     assert len(queries) >= 3
     by_query = {query["query_id"]: query for query in queries}
-    splits: dict[str, set[str]] = {"train": set(), "validation": set(), "test": set()}
     assert all(query["query"] != "france" for query in queries)
+    assert all(query["split"] == "train" for query in queries)
+    negatives: dict[tuple[str, str], int] = {}
     for pair in pairs:
         query = by_query[pair["query_id"]]
-        splits[pair["split"]].add(pair["query_id"])
+        assert pair["keyword"]
+        assert pair["split"] == "train"
+        source = next(item for item in query["keyword_sources"] if item["keyword"] == pair["keyword"])
         if pair["label"] == 1 and pair["element_type"] == "relation":
-            assert pair["relation"] in query["relations"]
-        if pair["label"] == 0 and pair["element_type"] == "relation":
-            assert pair["relation"] not in query["relations"]
+            assert pair["relation"] == source["relation"]
         if pair["label"] == 1 and pair["element_type"] == "attribute":
-            assert f"{pair['relation']}.{pair['attribute']}" in query["keyword_attributes"]
-        if pair["element_type"] == "attribute" and "example values:" in pair["element_text"]:
-            examples = pair["element_text"].split("example values: ", 1)[1]
-            for keyword in query["keywords"]:
-                assert normalize_text(keyword) not in normalize_text(examples)
+            assert pair["relation"] == source["relation"]
+            assert pair["attribute"] == source["attribute"]
         if pair["label"] == 1 and pair["element_type"] == "value":
-            assert any(keyword in normalize_text(pair["element_text"]) for keyword in query["keywords"])
-    assert splits["train"].isdisjoint(splits["validation"])
-    assert splits["train"].isdisjoint(splits["test"])
-    assert splits["validation"].isdisjoint(splits["test"])
-    assert all(splits.values())
+            assert pair["keyword"] in normalize_text(pair["element_text"])
+        if pair["element_type"] == "value" and pair["label"] == 0:
+            key = (pair["query_id"], pair["keyword"])
+            negatives[key] = negatives.get(key, 0) + 1
+    assert all(count <= 10 for count in negatives.values())
+
+
+def test_synthetic_keyword_keeps_its_source_and_one_other_hit(tmp_path: Path):
+    schema_path = tmp_path / "schema.sql"
+    data_path = tmp_path / "data.sql"
+    schema_path.write_text(SCHEMA, encoding="utf-8")
+    data_path.write_text(DATA, encoding="utf-8")
+    database = tmp_path / "mini.sqlite"
+    schema = load_sqlite(schema_path, data_path, database)
+    connection = sqlite3.connect(database)
+    query = {
+        "query_id": "q00000",
+        "query": "france paris",
+        "source": "synthetic",
+        "class_id": "country|city",
+        "relations": ["country", "city"],
+        "keyword_attributes": ["country.name", "city.name"],
+        "keywords": ["france", "paris"],
+        "keyword_sources": [
+            {"keyword": "france", "relation": "country", "attribute": "name", "value": "France"},
+            {"keyword": "paris", "relation": "city", "attribute": "name", "value": "Paris"},
+        ],
+        "split": "train",
+    }
+    pairs = build_keyword_pairs(connection, schema, [query], CONFIG)
+    connection.close()
+    france = [pair for pair in pairs if pair["keyword"] == "france"]
+    assert any(pair["element_type"] == "relation" and pair["relation"] == "country" and pair["label"] == 1 for pair in france)
+    assert any(pair["element_type"] == "attribute" and pair["relation"] == "country" and pair["label"] == 1 for pair in france)
+    assert any(pair["element_type"] == "value" and pair["relation"] == "country" and pair["label"] == 1 for pair in france)
+    assert any(pair["element_type"] == "value" and pair["relation"] == "city" and pair["label"] == 0 for pair in france)
+    assert sum(pair["element_type"] == "value" and pair["label"] == 0 for pair in france) <= 10
 
 
 def test_same_query_is_not_in_two_classes(tmp_path: Path):

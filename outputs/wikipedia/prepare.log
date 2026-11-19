@@ -1,0 +1,1 @@
+wikipedia | prepare | reused sqlite | synthetic queries 171 | synthetic pairs 3013 | coffman topics 50 | coffman pairs 107865 | roles 32 train, 8 validation, 10 test | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/data/processed/wikipedia/pairs.jsonl

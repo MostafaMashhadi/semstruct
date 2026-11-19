@@ -1,0 +1,10 @@
+mondial | pooled | folds 1/5 | fine-tuned | precision 0.441 | recall 0.893 | f1 0.590 | scoring 55.4 ms | ranker results
+mondial | pooled | folds 1/5 | pre-trained | precision 0.269 | recall 0.880 | f1 0.413 | scoring 65.8 ms | ranker results
+mondial | pooled | folds 2/5 | fine-tuned | precision 0.338 | recall 0.888 | f1 0.489 | scoring 62.3 ms | ranker results
+mondial | pooled | folds 2/5 | pre-trained | precision 0.243 | recall 0.741 | f1 0.366 | scoring 91.6 ms | ranker results
+mondial | pooled | folds 3/5 | fine-tuned | precision 0.366 | recall 0.790 | f1 0.500 | scoring 57.1 ms | ranker results
+mondial | pooled | folds 3/5 | pre-trained | precision 0.237 | recall 0.726 | f1 0.357 | scoring 95.0 ms | ranker results
+mondial | pooled | folds 4/5 | fine-tuned | precision 0.415 | recall 0.786 | f1 0.543 | scoring 57.8 ms | ranker results
+mondial | pooled | folds 4/5 | pre-trained | precision 0.256 | recall 0.750 | f1 0.382 | scoring 97.1 ms | ranker results
+mondial | pooled | folds 5/5 | fine-tuned | precision 0.455 | recall 0.787 | f1 0.576 | scoring 56.5 ms | ranker results
+mondial | pooled | folds 5/5 | pre-trained | precision 0.257 | recall 0.667 | f1 0.371 | scoring 90.3 ms | ranker results

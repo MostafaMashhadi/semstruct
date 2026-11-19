@@ -37,6 +37,14 @@ def model_dir(dataset: str, root: Path | None = None) -> Path:
     return (root or project_root()) / "outputs" / "models" / dataset
 
 
+def fold_model_dir(dataset: str, fold: int, root: Path | None = None) -> Path:
+    return model_dir(dataset, root) / f"fold-{fold}"
+
+
+def fold_output_dir(dataset: str, fold: int, root: Path | None = None) -> Path:
+    return output_dir(dataset, root) / f"fold-{fold}"
+
+
 def resolve_datasets(name: str) -> list[str]:
     if name == "all":
         return list(DATASETS)

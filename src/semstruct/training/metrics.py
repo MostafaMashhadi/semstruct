@@ -93,6 +93,59 @@ def classification_report(labels: list[int], scores: list[float], threshold: flo
     return report
 
 
+def retrieval_counts(labels: list[int], scores: list[float], threshold: float) -> dict[str, float | int]:
+    """Precision and recall of the hits at or above `threshold`."""
+    true_positive = 0
+    false_positive = 0
+    false_negative = 0
+    for label, score in zip(labels, scores):
+        retrieved = float(score) >= threshold
+        if retrieved and int(label) == 1:
+            true_positive += 1
+        elif retrieved:
+            false_positive += 1
+        elif int(label) == 1:
+            false_negative += 1
+    precision = true_positive / (true_positive + false_positive) if true_positive + false_positive else 0.0
+    recall = true_positive / (true_positive + false_negative) if true_positive + false_negative else 0.0
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    return {
+        "tp": true_positive,
+        "fp": false_positive,
+        "fn": false_negative,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "threshold": float(threshold),
+    }
+
+
+def pool_retrieval(blocks: list[dict]) -> dict[str, float | int]:
+    """Micro-average retrieval counts, and average per-query scoring time."""
+    true_positive = sum(int(block["tp"]) for block in blocks)
+    false_positive = sum(int(block["fp"]) for block in blocks)
+    false_negative = sum(int(block["fn"]) for block in blocks)
+    precision = true_positive / (true_positive + false_positive) if true_positive + false_positive else 0.0
+    recall = true_positive / (true_positive + false_negative) if true_positive + false_negative else 0.0
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    query_ms: list[float] = []
+    topics = 0
+    for block in blocks:
+        query_ms.extend(float(value) for value in block.get("query_ms", []))
+        topics += int(block.get("topics", 0))
+    scoring_ms = float(sum(query_ms) / len(query_ms)) if query_ms else 0.0
+    return {
+        "tp": true_positive,
+        "fp": false_positive,
+        "fn": false_negative,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "scoring_ms": scoring_ms,
+        "topics": topics,
+    }
+
+
 def best_f1_threshold(labels: list[int], scores: list[float]) -> float:
     if not scores:
         return 0.5

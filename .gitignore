@@ -12,8 +12,9 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
-outputs/*
-!outputs/.gitkeep
+
+# Checkpoints are large. Metrics, logs, and prepare stats are the result record.
+outputs/models/
 
 exports/
 

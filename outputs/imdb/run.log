@@ -1,0 +1,10 @@
+imdb | pooled | folds 1/5 | fine-tuned | precision 0.032 | recall 0.570 | f1 0.060 | scoring 58799.3 ms | ranker results
+imdb | pooled | folds 1/5 | pre-trained | precision 0.000 | recall 0.796 | f1 0.001 | scoring 63788.0 ms | ranker results
+imdb | pooled | folds 2/5 | fine-tuned | precision 0.028 | recall 0.655 | f1 0.054 | scoring 46045.6 ms | ranker results
+imdb | pooled | folds 2/5 | pre-trained | precision 0.000 | recall 0.506 | f1 0.001 | scoring 50560.3 ms | ranker results
+imdb | pooled | folds 3/5 | fine-tuned | precision 0.031 | recall 0.579 | f1 0.060 | scoring 64204.1 ms | ranker results
+imdb | pooled | folds 3/5 | pre-trained | precision 0.000 | recall 0.337 | f1 0.001 | scoring 69656.4 ms | ranker results
+imdb | pooled | folds 4/5 | fine-tuned | precision 0.035 | recall 0.651 | f1 0.067 | scoring 50680.4 ms | ranker results
+imdb | pooled | folds 4/5 | pre-trained | precision 0.000 | recall 0.470 | f1 0.001 | scoring 55206.3 ms | ranker results
+imdb | pooled | folds 5/5 | fine-tuned | precision 0.038 | recall 0.709 | f1 0.072 | scoring 42568.2 ms | ranker results
+imdb | pooled | folds 5/5 | pre-trained | precision 0.000 | recall 0.420 | f1 0.001 | scoring 46547.4 ms | ranker results

@@ -23,3 +23,5 @@ max_keywords: 2
 min_keywords: 1
 max_value_chars: 80
 join_timeout_seconds: 15
+value_negative_cap: 10
+n_folds: 5

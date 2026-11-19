@@ -1,0 +1,10 @@
+wikipedia | pooled | folds 1/5 | fine-tuned | precision 0.228 | recall 0.414 | f1 0.294 | scoring 3685.3 ms | ranker results
+wikipedia | pooled | folds 1/5 | pre-trained | precision 0.016 | recall 0.391 | f1 0.031 | scoring 3918.2 ms | ranker results
+wikipedia | pooled | folds 2/5 | fine-tuned | precision 0.141 | recall 0.484 | f1 0.218 | scoring 7015.8 ms | ranker results
+wikipedia | pooled | folds 2/5 | pre-trained | precision 0.014 | recall 0.425 | f1 0.027 | scoring 7491.3 ms | ranker results
+wikipedia | pooled | folds 3/5 | fine-tuned | precision 0.141 | recall 0.471 | f1 0.217 | scoring 6238.5 ms | ranker results
+wikipedia | pooled | folds 3/5 | pre-trained | precision 0.015 | recall 0.426 | f1 0.028 | scoring 6673.5 ms | ranker results
+wikipedia | pooled | folds 4/5 | fine-tuned | precision 0.150 | recall 0.454 | f1 0.226 | scoring 6461.8 ms | ranker results
+wikipedia | pooled | folds 4/5 | pre-trained | precision 0.013 | recall 0.389 | f1 0.026 | scoring 6959.7 ms | ranker results
+wikipedia | pooled | folds 5/5 | fine-tuned | precision 0.171 | recall 0.415 | f1 0.243 | scoring 6378.3 ms | ranker results
+wikipedia | pooled | folds 5/5 | pre-trained | precision 0.015 | recall 0.425 | f1 0.030 | scoring 6917.7 ms | ranker results

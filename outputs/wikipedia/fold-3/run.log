@@ -1,0 +1,22 @@
+wikipedia | fold 3 of 5 | train | device mps | seed 42 | train pairs 4223 | topics 32 train, 8 validation, 10 test | epochs 3 | batch 16 | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/models/wikipedia/fold-3
+wikipedia | fold 3 of 5 | step 50/792 | epoch 0.19 | loss 0.5847
+wikipedia | fold 3 of 5 | step 100/792 | epoch 0.38 | loss 0.3884
+wikipedia | fold 3 of 5 | step 150/792 | epoch 0.57 | loss 0.3158
+wikipedia | fold 3 of 5 | step 200/792 | epoch 0.76 | loss 0.3462
+wikipedia | fold 3 of 5 | step 250/792 | epoch 0.95 | loss 0.2795
+wikipedia | fold 3 of 5 | epoch 1 | validation precision 0.235 | recall 0.427 | f1 0.303 | best
+wikipedia | fold 3 of 5 | step 300/792 | epoch 1.14 | loss 0.2469
+wikipedia | fold 3 of 5 | step 350/792 | epoch 1.33 | loss 0.2373
+wikipedia | fold 3 of 5 | step 400/792 | epoch 1.52 | loss 0.2455
+wikipedia | fold 3 of 5 | step 450/792 | epoch 1.70 | loss 0.2400
+wikipedia | fold 3 of 5 | step 500/792 | epoch 1.89 | loss 0.2240
+wikipedia | fold 3 of 5 | epoch 2 | validation precision 0.241 | recall 0.438 | f1 0.311 | best
+wikipedia | fold 3 of 5 | step 550/792 | epoch 2.08 | loss 0.1876
+wikipedia | fold 3 of 5 | step 600/792 | epoch 2.27 | loss 0.1995
+wikipedia | fold 3 of 5 | step 650/792 | epoch 2.46 | loss 0.1791
+wikipedia | fold 3 of 5 | step 700/792 | epoch 2.65 | loss 0.1886
+wikipedia | fold 3 of 5 | step 750/792 | epoch 2.84 | loss 0.1640
+wikipedia | fold 3 of 5 | epoch 3 | validation precision 0.235 | recall 0.427 | f1 0.303
+wikipedia | fold 3 of 5 | saved | best validation f1 0.311 | step 528 | /Users/mostafamashhadizadeh/Desktop/MyProjects/semstruct/outputs/models/wikipedia/fold-3 | elapsed 385s
+wikipedia | fold 3 of 5 | evaluate | fine-tuned | threshold 0.883 | test topics 10 | precision 0.185 | recall 0.411 | f1 0.255 | scoring 7131.5 ms
+wikipedia | fold 3 of 5 | evaluate | pre-trained | threshold 0.804 | test topics 10 | precision 0.010 | recall 0.295 | f1 0.020 | scoring 7818.1 ms

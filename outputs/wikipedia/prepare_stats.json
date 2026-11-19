@@ -1,0 +1,128 @@
+{
+  "classes": 16,
+  "queries": 221,
+  "pairs": 110878,
+  "skipped_topic_collisions": 0,
+  "skipped_empty_rows": 30,
+  "value_negative_cap": 10,
+  "splits": {
+    "train": 171,
+    "validation": 0,
+    "test": 0
+  },
+  "synthetic_queries": 171,
+  "synthetic_pairs": 3013,
+  "coffman": {
+    "topics": 50,
+    "topics_used": 50,
+    "topics_skipped": 0,
+    "pairs": 107865,
+    "folds": {
+      "0": 10,
+      "1": 10,
+      "2": 10,
+      "3": 10,
+      "4": 10
+    },
+    "fold_roles": {
+      "0": {
+        "train": 32,
+        "validation": 8,
+        "test": 10
+      },
+      "1": {
+        "train": 32,
+        "validation": 8,
+        "test": 10
+      },
+      "2": {
+        "train": 32,
+        "validation": 8,
+        "test": 10
+      },
+      "3": {
+        "train": 32,
+        "validation": 8,
+        "test": 10
+      },
+      "4": {
+        "train": 32,
+        "validation": 8,
+        "test": 10
+      }
+    },
+    "value_negative_cap": 10
+  },
+  "categories": {
+    "relation": {
+      "positive": 287,
+      "negative": 0,
+      "total": 287
+    },
+    "attribute": {
+      "positive": 457,
+      "negative": 630,
+      "total": 1087
+    },
+    "value": {
+      "positive": 607,
+      "negative": 108897,
+      "total": 109504
+    },
+    "all": {
+      "positive": 1351,
+      "negative": 109527,
+      "total": 110878
+    }
+  },
+  "categories_by_source": {
+    "synthetic": {
+      "relation": {
+        "positive": 285,
+        "negative": 0,
+        "total": 285
+      },
+      "attribute": {
+        "positive": 285,
+        "negative": 370,
+        "total": 655
+      },
+      "value": {
+        "positive": 285,
+        "negative": 1788,
+        "total": 2073
+      },
+      "all": {
+        "positive": 855,
+        "negative": 2158,
+        "total": 3013
+      }
+    },
+    "coffman": {
+      "relation": {
+        "positive": 2,
+        "negative": 0,
+        "total": 2
+      },
+      "attribute": {
+        "positive": 172,
+        "negative": 260,
+        "total": 432
+      },
+      "value": {
+        "positive": 322,
+        "negative": 107109,
+        "total": 107431
+      },
+      "all": {
+        "positive": 496,
+        "negative": 107369,
+        "total": 107865
+      }
+    }
+  },
+  "dataset": "wikipedia",
+  "topics": 50,
+  "relations": 6,
+  "reused_sqlite": true
+}

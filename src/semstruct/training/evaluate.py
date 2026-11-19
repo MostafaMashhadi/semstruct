@@ -1,32 +1,31 @@
-"""Evaluate a fine-tuned classifier against lexical and frozen-embedding baselines."""
+"""Score each fold's held-out Coffman topics and pool precision, recall, and F1."""
 
 from __future__ import annotations
 
 import json
-import logging
-import sqlite3
+import time
+from collections import defaultdict
 from pathlib import Path
 
 from semstruct.config import load_config
-from semstruct.data.elements import (
-    attribute_element_id,
-    attribute_text,
-    relation_element_id,
-    relation_text,
-)
+from semstruct.data.instances import folds_for_topics, select_fold_pairs
 from semstruct.data.prepare import read_jsonl
-from semstruct.data.schema import Schema
-from semstruct.device import release_device_cache, select_device
-from semstruct.model.classifier import load_classifier
-from semstruct.model.scoring import keyword_relevance, query_class_score, relevance_probabilities
-from semstruct.paths import model_dir, output_dir, processed_dir, project_root
-from semstruct.training.baselines import cosine_from_texts, overlap_scores
-from semstruct.training.metrics import best_f1_threshold, classification_report, ranking_report
-
-logger = logging.getLogger(__name__)
+from semstruct.device import release_device_cache
+from semstruct.model.classifier import load_ranker
+from semstruct.model.scoring import relevance_probabilities
+from semstruct.paths import fold_model_dir, fold_output_dir, output_dir, processed_dir, project_root
+from semstruct.runlog import emit, format_eval, format_pooled
+from semstruct.training.baselines import overlap_scores, pretrained_cosine
+from semstruct.training.metrics import best_f1_threshold, pool_retrieval, retrieval_counts
 
 
-def evaluate_dataset(dataset: str, config: dict | None = None, root: Path | None = None, batch_size: int | None = None) -> dict:
+def evaluate_dataset(
+    dataset: str,
+    config: dict | None = None,
+    root: Path | None = None,
+    batch_size: int | None = None,
+    fold: int | str = "all",
+) -> dict:
     root = root or project_root()
     config = dict(config or load_config(dataset, root=root))
     if batch_size is not None:
@@ -34,339 +33,240 @@ def evaluate_dataset(dataset: str, config: dict | None = None, root: Path | None
     directory = processed_dir(dataset, root)
     pairs = read_jsonl(directory / "pairs.jsonl")
     queries = read_jsonl(directory / "queries.jsonl")
-    classes = read_jsonl(directory / "classes.jsonl")
-    topics = read_jsonl(directory / "topics.jsonl")
-    examples = json.loads((directory / "examples.json").read_text(encoding="utf-8"))
-    schema = Schema.from_dict(json.loads((directory / "schema.json").read_text(encoding="utf-8")))
-    checkpoint = model_dir(dataset, root)
-    if not (checkpoint / "config.json").is_file():
-        raise FileNotFoundError(f"No fine-tuned model at {checkpoint}. Run train first.")
+    topic_ids = [str(query["topic_id"]) for query in queries if query.get("source") == "coffman" and query.get("topic_id")]
+    n_folds = int(config.get("n_folds", 5))
+    available = folds_for_topics(topic_ids, n_folds)
+    chosen = available if fold == "all" else [int(fold)]
+    pooled = None
+    for fold_index in chosen:
+        if fold_index not in available:
+            raise ValueError(f"Fold {fold_index} is outside {available}")
+        _evaluate_fold(dataset, config, root, pairs, topic_ids, fold_index, n_folds)
+        release_device_cache()
+        pooled = write_cv_metrics(dataset, root, n_folds)
+        from semstruct.reports import refresh_reports
 
-    device = select_device()
-    tokenizer, model = load_classifier(str(checkpoint))
-    batch = int(config["batch_size"])
-    max_length = int(config["max_length"])
-    validation = [row for row in pairs if row["split"] == "validation"]
-    test = [row for row in pairs if row["split"] == "test"]
-    test_queries = [query for query in queries if query["split"] == "test"]
+        refresh_reports(root)
+    if pooled is None:
+        pooled = write_cv_metrics(dataset, root, n_folds)
+    return pooled
 
-    systems = {
-        "distilbert": _cross_encoder_scorer(model, tokenizer, batch, device, max_length),
-        "token_overlap": lambda queries_batch, texts: overlap_scores(queries_batch, texts),
-        "frozen_distilbert": _frozen_scorer(config["model_id"], batch, device, max_length),
+
+def write_cv_metrics(dataset: str, root: Path | None = None, n_folds: int = 5) -> dict:
+    root = root or project_root()
+    completed = []
+    fold_payloads = {}
+    for fold in range(n_folds):
+        path = fold_output_dir(dataset, fold, root) / "metrics.json"
+        if not path.is_file():
+            continue
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        completed.append(fold)
+        fold_payloads[str(fold)] = payload
+    systems = {}
+    for system in ("finetuned_distilbert", "pretrained_distilbert"):
+        blocks = [fold_payloads[str(fold)][system] for fold in completed]
+        pooled = pool_retrieval(blocks) if blocks else pool_retrieval([])
+        pooled["label"] = "ranker results"
+        systems[system] = pooled
+    report = {
+        "dataset": dataset,
+        "folds_completed": completed,
+        "folds_expected": n_folds,
+        "ranker_results": systems,
+        "folds": fold_payloads,
     }
-    report: dict = {"dataset": dataset, "device": str(device), "systems": {}}
-    schema_scores: dict[str, list[tuple[dict, dict, float]]] = {}
-    for name, scorer in systems.items():
-        logger.info("scoring %s with %s", dataset, name)
-        validation_scores = scorer([row["query"] for row in validation], [row["element_text"] for row in validation])
-        test_scores = scorer([row["query"] for row in test], [row["element_text"] for row in test])
-        threshold = best_f1_threshold([int(row["label"]) for row in validation], validation_scores)
-        rendered = _score_schema(scorer, test_queries, schema, examples)
-        schema_scores[name] = rendered
-        report["systems"][name] = {
-            "validation": _pair_block(validation, validation_scores, threshold),
-            "test": _pair_block(test, test_scores, threshold),
-            "schema_ranking": _schema_ranking(rendered),
-            "query_class_ranking": _class_ranking(rendered, test_queries, classes, schema),
-        }
-
-    search_map = _search_map(directory / "database.sqlite")
-    report["coffman"] = _coffman_report(
-        topics,
-        schema,
-        examples,
-        search_map,
-        systems,
-        model,
-        tokenizer,
-        batch,
-        device,
-        max_length,
-    )
     destination = output_dir(dataset, root)
     destination.mkdir(parents=True, exist_ok=True)
-    (destination / "metrics.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
-    logger.info("wrote %s", destination / "metrics.json")
-    systems.clear()
-    del model, tokenizer
-    release_device_cache()
+    (destination / "cv-metrics.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    log_path = destination / "run.log"
+    names = {"finetuned_distilbert": "fine-tuned", "pretrained_distilbert": "pre-trained"}
+    for system, label in names.items():
+        block = systems[system]
+        emit(
+            format_pooled(
+                dataset,
+                label,
+                len(completed),
+                n_folds,
+                float(block["precision"]),
+                float(block["recall"]),
+                float(block["f1"]),
+                float(block["scoring_ms"]),
+            ),
+            log_path,
+        )
     return report
 
 
-def _cross_encoder_scorer(model, tokenizer, batch_size: int, device, max_length: int):
-    def score(queries: list[str], texts: list[str]) -> list[float]:
-        return relevance_probabilities(
-            model,
-            tokenizer,
-            queries,
-            texts,
-            batch_size=batch_size,
-            device=device,
-            max_length=max_length,
-        )
+def _evaluate_fold(dataset, config, root, pairs, topic_ids, fold, n_folds) -> dict:
+    _train, validation, test = select_fold_pairs(
+        pairs,
+        topic_ids,
+        fold,
+        int(config["seed"]),
+        int(config.get("value_negative_cap", 10)),
+        n_folds,
+    )
+    if not validation or not test:
+        raise ValueError(f"{dataset} fold {fold} is missing validation or test pairs")
+    checkpoint = fold_model_dir(dataset, fold, root)
+    if not (checkpoint / "scorer.pt").is_file():
+        raise FileNotFoundError(f"No fine-tuned model at {checkpoint}. Run train --fold {fold} first.")
+    batch = int(config["batch_size"])
+    max_length = int(config["max_length"])
+    log_path = fold_output_dir(dataset, fold, root) / "run.log"
+    finetuned = _score_loaded(
+        "fine-tuned",
+        dataset,
+        fold,
+        n_folds,
+        validation,
+        test,
+        log_path,
+        *_finetuned_scores(checkpoint, validation, test, batch, max_length),
+    )
+    release_device_cache()
+    pretrained = _score_loaded(
+        "pre-trained",
+        dataset,
+        fold,
+        n_folds,
+        validation,
+        test,
+        log_path,
+        *_pretrained_scores(config["model_id"], validation, test, batch, max_length),
+    )
+    release_device_cache()
+    overlap = _overlap_block(validation, test)
+    test_topics = sorted({str(row.get("topic_id")) for row in test if row.get("topic_id")})
+    payload = {
+        "dataset": dataset,
+        "fold": fold,
+        "test_topics": test_topics,
+        "finetuned_distilbert": finetuned,
+        "pretrained_distilbert": pretrained,
+        "internal": {"token_overlap": overlap},
+    }
+    record = fold_output_dir(dataset, fold, root)
+    record.mkdir(parents=True, exist_ok=True)
+    (record / "metrics.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return payload
 
-    return score
+
+def _score_loaded(name, dataset, fold, n_folds, validation, test, log_path, validation_scores, test_scores, query_ms) -> dict:
+    threshold = best_f1_threshold([int(row["label"]) for row in validation], validation_scores)
+    report = retrieval_counts([int(row["label"]) for row in test], test_scores, threshold)
+    topics = len({row["query_id"] for row in test})
+    scoring_ms = float(sum(query_ms) / len(query_ms)) if query_ms else 0.0
+    report.update({"topics": topics, "scoring_ms": scoring_ms, "query_ms": query_ms, "label": "ranker results"})
+    emit(
+        format_eval(
+            dataset,
+            fold,
+            n_folds,
+            name,
+            float(report["threshold"]),
+            topics,
+            float(report["precision"]),
+            float(report["recall"]),
+            float(report["f1"]),
+            scoring_ms,
+        ),
+        log_path,
+    )
+    return report
 
 
-def _frozen_scorer(model_id: str, batch_size: int, device, max_length: int):
+def _finetuned_scores(checkpoint: Path, validation: list[dict], test: list[dict], batch_size: int, max_length: int):
+    from semstruct.device import select_device
+
+    tokenizer, model = load_ranker(str(checkpoint))
+    device = select_device()
+    try:
+        validation_scores = _probabilities(model, tokenizer, validation, batch_size, device, max_length)
+        test_scores, query_ms = _timed_probabilities(model, tokenizer, test, batch_size, device, max_length)
+        return validation_scores, test_scores, query_ms
+    finally:
+        del model, tokenizer
+
+
+def _pretrained_scores(model_id: str, validation: list[dict], test: list[dict], batch_size: int, max_length: int):
     from transformers import AutoModel, AutoTokenizer
+
+    from semstruct.device import select_device
 
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModel.from_pretrained(model_id)
-
-    def score(queries: list[str], texts: list[str]) -> list[float]:
-        if not queries:
-            return []
-        return cosine_from_texts(
-            model,
-            tokenizer,
-            queries,
-            texts,
-            batch_size=batch_size,
-            device=device,
-            max_length=max_length,
-        )
-
-    return score
-
-
-def _pair_block(pairs: list[dict], scores: list[float], threshold: float) -> dict:
-    labels = [int(row["label"]) for row in pairs]
-    block = {
-        "classification": classification_report(labels, scores, threshold),
-        "classification_at_0.5": classification_report(labels, scores, 0.5),
-        "ranking_paired": ranking_report(_grouped(pairs, scores, lambda row: int(row["label"]))),
-        "by_element_type": {},
-    }
-    for element_type in ("relation", "attribute", "value"):
-        chosen = [(row, score) for row, score in zip(pairs, scores) if row["element_type"] == element_type]
-        if not chosen:
-            continue
-        chosen_rows = [row for row, _score in chosen]
-        chosen_scores = [score for _row, score in chosen]
-        block["by_element_type"][element_type] = {
-            "classification": classification_report(
-                [int(row["label"]) for row in chosen_rows],
-                chosen_scores,
-                threshold,
-            ),
-            "ranking_paired": ranking_report(
-                _grouped(chosen_rows, chosen_scores, lambda row: int(row["label"]))
-            ),
-        }
-    return block
-
-
-def _grouped(pairs: list[dict], scores: list[float], label_of) -> dict[str, list[tuple[float, int]]]:
-    grouped: dict[str, list[tuple[float, int]]] = {}
-    for row, score in zip(pairs, scores):
-        grouped.setdefault(row["query_id"], []).append((float(score), int(label_of(row))))
-    return grouped
-
-
-def _score_schema(scorer, queries: list[dict], schema: Schema, examples: dict[str, list[str]]):
-    flat_queries: list[str] = []
-    flat_texts: list[str] = []
-    flat_rows: list[tuple[dict, dict]] = []
-    for query in queries:
-        for row in _schema_rows(schema, examples, query["keywords"]):
-            flat_queries.append(query["query"])
-            flat_texts.append(row["text"])
-            flat_rows.append((query, row))
-    scores = scorer(flat_queries, flat_texts) if flat_queries else []
-    return [(query, row, score) for (query, row), score in zip(flat_rows, scores)]
-
-
-def _schema_rows(schema: Schema, examples: dict[str, list[str]], keywords: list[str]) -> list[dict]:
-    rows = []
-    for relation_name in sorted(schema.relations):
-        relation = schema.relations[relation_name]
-        rows.append(
-            {
-                "element_id": relation_element_id(relation.name),
-                "element_type": "relation",
-                "relation": relation.name,
-                "attribute": "",
-                "text": relation_text(relation),
-            }
-        )
-        for attribute in relation.keyword_attributes():
-            key = f"{relation.name}.{attribute.name}"
-            rows.append(
-                {
-                    "element_id": attribute_element_id(relation.name, attribute.name),
-                    "element_type": "attribute",
-                    "relation": relation.name,
-                    "attribute": attribute.name,
-                    "text": attribute_text(relation, attribute, examples.get(key, []), keywords),
-                }
-            )
-    return rows
-
-
-def _schema_ranking(scored_rows: list[tuple[dict, dict, float]]) -> dict:
-    grouped: dict[str, list[tuple[float, int]]] = {}
-    for query, row, score in scored_rows:
-        if row["element_type"] == "relation":
-            label = int(row["relation"] in query["relations"])
-        else:
-            label = int(f"{row['relation']}.{row['attribute']}" in query["keyword_attributes"])
-        grouped.setdefault(query["query_id"], []).append((float(score), label))
-    return ranking_report(grouped)
-
-
-def _class_ranking(scored_rows, queries: list[dict], classes: list[dict], schema: Schema) -> dict:
-    by_query: dict[str, dict[str, float]] = {}
-    for query, row, score in scored_rows:
-        by_query.setdefault(query["query_id"], {})[row["element_id"]] = float(score)
-    reciprocal = []
-    hits = []
-    query_by_id = {query["query_id"]: query for query in queries}
-    class_elements = {item["class_id"]: _class_element_ids(schema, item["relations"]) for item in classes}
-    for query_id, scores in by_query.items():
-        gold = query_by_id[query_id]["class_id"]
-        if gold not in class_elements:
-            continue
-        ranked = []
-        for class_id, element_ids in class_elements.items():
-            values = [scores[element_id] for element_id in element_ids if element_id in scores]
-            ranked.append((query_class_score(values), class_id))
-        ranked.sort(key=lambda item: (-item[0], item[1]))
-        labels = [1 if class_id == gold else 0 for _score, class_id in ranked]
-        rank = labels.index(1) + 1
-        reciprocal.append(1.0 / rank)
-        hits.append(1.0 if rank == 1 else 0.0)
-    if not reciprocal:
-        return {"mrr": None, "recall@1": None, "queries": 0}
-    return {
-        "mrr": sum(reciprocal) / len(reciprocal),
-        "recall@1": sum(hits) / len(hits),
-        "queries": len(reciprocal),
-    }
-
-
-def _class_element_ids(schema: Schema, relations: list[str]) -> list[str]:
-    element_ids = []
-    for relation_name in relations:
-        element_ids.append(relation_element_id(relation_name))
-        relation = schema.relations[relation_name]
-        for attribute in relation.keyword_attributes():
-            element_ids.append(attribute_element_id(relation_name, attribute.name))
-    return element_ids
-
-
-def _search_map(sqlite_path: Path) -> dict[int, str]:
-    if not sqlite_path.exists():
-        return {}
-    connection = sqlite3.connect(sqlite_path)
+    device = select_device()
     try:
-        rows = connection.execute("SELECT search_id, relation FROM semstruct_search_id").fetchall()
-    except sqlite3.OperationalError:
-        rows = []
+        validation_scores = _cosine(model, tokenizer, validation, batch_size, device, max_length)
+        test_scores, query_ms = _timed_cosine(model, tokenizer, test, batch_size, device, max_length)
+        return validation_scores, test_scores, query_ms
     finally:
-        connection.close()
-    return {int(search_id): relation for search_id, relation in rows}
+        del model, tokenizer
 
 
-def _coffman_report(topics, schema, examples, search_map, systems, model, tokenizer, batch_size, device, max_length) -> dict:
-    relation_rows = [
-        {"element_id": relation_element_id(name), "relation": name, "text": relation_text(schema.relations[name])}
-        for name in sorted(schema.relations)
-    ]
-    qualitative = []
-    system_groups = {name: {} for name in systems}
-    skipped = 0
-    unresolved = 0
-    scored_topics = [topic for topic in topics if topic.get("split", "test") == "test"]
-    for topic in scored_topics:
-        gold = set()
-        for search_id in topic["search_ids"]:
-            relation = search_map.get(int(search_id))
-            if relation is None:
-                unresolved += 1
-                continue
-            gold.add(relation)
-        attribute_rows = [
-            row
-            for row in _schema_rows(schema, examples, topic["query"].split())
-            if row["element_type"] == "attribute"
-        ]
-        per_system = {}
-        for name, scorer in systems.items():
-            relation_scores = scorer([topic["query"]] * len(relation_rows), [row["text"] for row in relation_rows])
-            attribute_scores = scorer(
-                [topic["query"]] * len(attribute_rows),
-                [row["text"] for row in attribute_rows],
-            )
-            ranked_relations = sorted(
-                (
-                    {"relation": row["relation"], "score": score}
-                    for row, score in zip(relation_rows, relation_scores)
-                ),
-                key=lambda item: (-item["score"], item["relation"]),
-            )
-            ranked_attributes = sorted(
-                (
-                    {
-                        "attribute": f"{row['relation']}.{row['attribute']}",
-                        "score": score,
-                    }
-                    for row, score in zip(attribute_rows, attribute_scores)
-                ),
-                key=lambda item: (-item["score"], item["attribute"]),
-            )
-            per_system[name] = {
-                "top_relations": ranked_relations[:5],
-                "top_attributes": ranked_attributes[:5],
-            }
-            if gold:
-                system_groups[name].setdefault(topic["topic_id"], [])
-                system_groups[name][topic["topic_id"]] = [
-                    (item["score"], int(item["relation"] in gold)) for item in ranked_relations
-                ]
-        if not gold:
-            skipped += 1
-        top_relations = per_system["distilbert"]["top_relations"]
-        keyword_rows = []
-        for item in top_relations:
-            relation = item["relation"]
-            text = next(row["text"] for row in relation_rows if row["relation"] == relation)
-            keyword_rows.append(
-                keyword_relevance(
-                    model,
-                    tokenizer,
-                    topic["query"],
-                    text,
-                    batch_size=batch_size,
-                    device=device,
-                    max_length=max_length,
-                )
-            )
-        qualitative.append(
-            {
-                "topic_id": topic["topic_id"],
-                "query": topic["query"],
-                "gold_relations": sorted(gold),
-                "systems": per_system,
-                "distilbert_keyword_scores": keyword_rows,
-            }
-        )
-    ranking = {}
-    for name, grouped in system_groups.items():
-        ranking[name] = ranking_report(grouped) if grouped else {"map": None, "mrr": None, "recall@5": None, "recall@10": None, "queries": 0}
-    return {
-        "relation_ranking": ranking,
-        "topics": len(topics),
-        "topics_in_report": len(scored_topics),
-        "topics_used_in_training_or_validation": len(topics) - len(scored_topics),
-        "topics_without_resolved_tuples": skipped,
-        "unresolved_search_ids": unresolved,
-        "qualitative": qualitative,
-        "note": (
-            "One third of the Coffman topics are the test slice scored here. "
-            "The other two thirds are training and validation pairs, so they are not in this report. "
-            "Gold relations are the relations of tuples cited by __search_id. "
-            "A cell in a judged tuple is a positive attribute or value when it contains a query keyword."
-        ),
-    }
+def _probabilities(model, tokenizer, rows, batch_size, device, max_length) -> list[float]:
+    return relevance_probabilities(
+        model,
+        tokenizer,
+        [row["keyword"] for row in rows],
+        [row["query"] for row in rows],
+        [row["element_text"] for row in rows],
+        batch_size=batch_size,
+        device=device,
+        max_length=max_length,
+    )
+
+
+def _cosine(model, tokenizer, rows, batch_size, device, max_length) -> list[float]:
+    return pretrained_cosine(
+        model,
+        tokenizer,
+        [row["keyword"] for row in rows],
+        [row["query"] for row in rows],
+        [row["element_text"] for row in rows],
+        batch_size=batch_size,
+        device=device,
+        max_length=max_length,
+    )
+
+
+def _timed_probabilities(model, tokenizer, rows, batch_size, device, max_length):
+    return _time_groups(rows, lambda group: _probabilities(model, tokenizer, group, batch_size, device, max_length))
+
+
+def _timed_cosine(model, tokenizer, rows, batch_size, device, max_length):
+    return _time_groups(rows, lambda group: _cosine(model, tokenizer, group, batch_size, device, max_length))
+
+
+def _time_groups(pairs: list[dict], score_group) -> tuple[list[float], list[float]]:
+    groups: dict[str, list[int]] = defaultdict(list)
+    for index, pair in enumerate(pairs):
+        groups[pair["query_id"]].append(index)
+    scores = [0.0] * len(pairs)
+    query_ms = []
+    for indices in groups.values():
+        rows = [pairs[index] for index in indices]
+        started = time.perf_counter()
+        batch_scores = score_group(rows)
+        query_ms.append((time.perf_counter() - started) * 1000)
+        for index, score in zip(indices, batch_scores):
+            scores[index] = float(score)
+    return scores, query_ms
+
+
+def _overlap_block(validation: list[dict], test: list[dict]) -> dict:
+    validation_scores = overlap_scores(
+        [f"{row['keyword']} {row['query']}" for row in validation],
+        [row["element_text"] for row in validation],
+    )
+    test_scores = overlap_scores(
+        [f"{row['keyword']} {row['query']}" for row in test],
+        [row["element_text"] for row in test],
+    )
+    threshold = best_f1_threshold([int(row["label"]) for row in validation], validation_scores)
+    report = retrieval_counts([int(row["label"]) for row in test], test_scores, threshold)
+    report["label"] = "internal check"
+    return report

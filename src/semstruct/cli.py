@@ -31,6 +31,7 @@ def main(argv: list[str] | None = None) -> None:
     train.add_argument("--epochs", type=int, default=None)
     train.add_argument("--batch-size", type=int, default=None)
     train.add_argument("--limit-pairs", type=int, default=None)
+    train.add_argument("--fold", default="all", help="Fold 0-4, or all")
     train.add_argument(
         "--overfit-check",
         action="store_true",
@@ -41,6 +42,7 @@ def main(argv: list[str] | None = None) -> None:
     _add_dataset(evaluate)
     evaluate.add_argument("--config", default=None)
     evaluate.add_argument("--batch-size", type=int, default=None)
+    evaluate.add_argument("--fold", default="all", help="Fold 0-4, or all")
 
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -69,6 +71,7 @@ def main(argv: list[str] | None = None) -> None:
                 epochs=args.epochs,
                 batch_size=args.batch_size,
                 limit_pairs=args.limit_pairs,
+                fold=_parse_fold(args.fold),
             )
         return
     if args.command == "evaluate":
@@ -76,13 +79,21 @@ def main(argv: list[str] | None = None) -> None:
 
         for dataset in datasets:
             config = load_config(dataset, args.config)
-            evaluate_dataset(dataset, config, batch_size=args.batch_size)
+            evaluate_dataset(dataset, config, batch_size=args.batch_size, fold=_parse_fold(args.fold))
         return
     raise SystemExit(f"Unknown command {args.command}")
 
 
 def _add_dataset(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--dataset", required=True, choices=["mondial", "imdb", "wikipedia", "all"])
+
+
+def _parse_fold(value: str) -> int | str:
+    if value == "all":
+        return "all"
+    if value in {"0", "1", "2", "3", "4"}:
+        return int(value)
+    raise SystemExit("Fold must be 0, 1, 2, 3, 4, or all.")
 
 
 if __name__ == "__main__":
