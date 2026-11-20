@@ -38,30 +38,53 @@ def _markdown(records: list[dict]) -> str:
         "A keyword on a primary network receives one relevance probability: a relation or attribute uses its schema text, "
         "and a value keyword uses the highest probability among the cells of its stored attribute. "
         "The network score is the mean of those probabilities. "
-        "Networks below the fold's validation threshold are dropped, and at most thirty remain. "
-        "Networks that share a join tree and the same value predicates become one SQL statement on the SQLite benchmark. "
+        "Networks are ordered by that score. A lower score does not remove a network. "
+        "The search stops after 1,000 distinct answers. "
+        "A tuple set or a partial join that was already fetched is reused, and only the next relation is joined. "
         "A joined row is relevant when its set of search ids equals one Coffman answer. "
-        "The ranked list is cut at 1,000 answers. "
+        "One extra id or one missing id makes the row wrong. "
         "The files are `outputs/<dataset>/icn/results.json` and `outputs/<dataset>/icn/metrics.json`.",
         "",
-        "| Database | Topics | Top-1 | MRR | MAP | Scoring | SQL |",
+        "| Database | Topics | Precision | Recall | F1 | Networks evaluated | Query time |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for item in records:
         lines.append(
-            f"| {NAMES[item['dataset']]} | {item['topics']} | {item['top1']} | "
-            f"{item['mrr']:.3f} | {item['map']:.3f} | {item['scoring_ms']:.1f} ms | {item['sql_ms']:.1f} ms |"
+            f"| {NAMES[item['dataset']]} | {item['topics']} | {item['precision']:.3f} | "
+            f"{item['recall']:.3f} | {item['f1']:.3f} | {item['networks_evaluated']:,} | "
+            f"{item['query_ms']:.1f} ms |"
         )
     lines.extend(
         [
             "",
-            "Top-1 counts queries whose first answer is relevant, out of 50. "
-            "A topic with no relevant answer contributes zero to MRR and MAP. "
-            "Scoring time and SQL time are means over the 50 topics. "
-            "They are separate from the ranker scoring time.",
+            "| Database | Top-1 | MRR | MAP | Scoring | SQL |",
+            "| --- | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for item in records:
+        lines.append(
+            f"| {NAMES[item['dataset']]} | {item['top1']} | {item['mrr']:.3f} | "
+            f"{item['map']:.3f} | {item['scoring_ms']:.1f} ms | {item['sql_ms']:.1f} ms |"
+        )
+    lines.extend(
+        [
             "",
-            "The same top-1 count and reciprocal rank were published for four earlier systems on this benchmark. "
-            "Those papers do not print MAP in the table used here.",
+            "Precision, recall, and F1 are unweighted means over the topics. "
+            "A topic with no returned row has precision 0. A topic with no judged answer is left out of recall and F1. "
+            "Networks evaluated counts primary networks whose join started before 1,000 answers existed. "
+            "Query time is the mean of scoring time plus the incremental SQL time. "
+            "Top-1, MRR, and MAP stay beside those figures. They are not the paper's precision, recall, and F1.",
+            "",
+            "The paper's baseline table has five rows: ICN with no DistilBERT scores, Key2Vec plus ICN, "
+            "pre-trained DistilBERT plus ICN, fine-tuned DistilBERT plus ICN with the scores ignored when ordering, and SemStruct. "
+            "This repository has measured only SemStruct. The other four rows are not filled from published papers.",
+            "",
+            "The next table is not that baseline. "
+            "Its four older systems were not run here. "
+            "The numbers are copied from Joel Coffman and Alfred C. Weaver, "
+            "*Structured Data Retrieval Using Cover Density Ranking*, KEYS 2010, pages 1–6, Table 2. "
+            "That table counts top-1 results and reciprocal rank. "
+            "It is not this program's exact search-id rule, so the numbers are not placed in the paper's precision, recall, or F1 columns.",
             "",
             "| Database | System | Top-1 | Reciprocal rank |",
             "| --- | --- | ---: | ---: |",

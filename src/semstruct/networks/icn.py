@@ -21,11 +21,10 @@ from semstruct.data.schema import Schema, quote_ident, schema_graph
 from semstruct.data.topics import load_topics
 from semstruct.device import release_device_cache, select_device
 from semstruct.networks.primary import _contains_keyword_tokens
-from semstruct.paths import fold_model_dir, fold_output_dir, icn_dir, networks_dir, processed_dir, project_root
+from semstruct.paths import fold_model_dir, icn_dir, networks_dir, processed_dir, project_root
 from semstruct.ranker.scoring import relevance_probabilities
 from semstruct.runlog import emit
 
-MAX_NETWORKS = 30
 MAX_ANSWERS = 1000
 
 
@@ -39,10 +38,6 @@ def evaluate_dataset(dataset: str, root: Path | None = None, config: dict | None
     topics = {topic.topic_id: topic for topic in load_topics(directory / "topics")}
     topic_ids = [str(query["topic_id"]) for query in document["queries"]]
     folds = assign_topic_folds(topic_ids, int(config["seed"]), int(config.get("n_folds", 5)))
-    thresholds = {
-        fold: _fold_threshold(dataset, fold, root)
-        for fold in sorted(set(folds.values()))
-    }
     graph = schema_graph(schema)
     connection = sqlite3.connect(directory / "database.sqlite")
     destination = icn_dir(dataset, root)
@@ -54,7 +49,6 @@ def evaluate_dataset(dataset: str, root: Path | None = None, config: dict | None
             document["queries"],
             topics,
             folds,
-            thresholds,
             schema,
             graph,
             connection,
@@ -68,7 +62,6 @@ def evaluate_dataset(dataset: str, root: Path | None = None, config: dict | None
     metrics = _metrics(dataset, queries)
     payload = {
         "dataset": dataset,
-        "max_networks": MAX_NETWORKS,
         "max_answers": MAX_ANSWERS,
         "queries": queries,
     }
@@ -77,33 +70,47 @@ def evaluate_dataset(dataset: str, root: Path | None = None, config: dict | None
     emit(
         (
             f"{dataset} | icn | topics {metrics['topics']} | top-1 {metrics['top1']} | "
-            f"mrr {metrics['mrr']:.3f} | map {metrics['map']:.3f} | "
-            f"scoring {metrics['scoring_ms']:.1f} ms | sql {metrics['sql_ms']:.1f} ms | {destination}"
+            f"precision {metrics['precision']:.3f} | recall {metrics['recall']:.3f} | "
+            f"f1 {metrics['f1']:.3f} | mrr {metrics['mrr']:.3f} | map {metrics['map']:.3f} | "
+            f"networks {metrics['networks_evaluated']} | "
+            f"query {metrics['query_ms']:.1f} ms | {destination}"
         ),
         log_path,
     )
     return metrics
 
 
-def select_networks(networks: list[dict], threshold: float, limit: int = MAX_NETWORKS) -> list[dict]:
-    """Keep networks at or above the threshold, then the best `limit`.
+def order_networks(networks: list[dict]) -> list[dict]:
+    """Order every network. A low score changes the order and does not remove it.
 
-    An empty selection falls back to the single best network. Fewer relations
-    win a tie, then the network id.
+    Higher scores come first. Fewer relations win a tie, then the network id.
     """
-    if not networks:
-        return []
-    kept = [network for network in networks if float(network["score"]) >= threshold]
-    if not kept:
-        kept = [max(networks, key=lambda item: (float(item["score"]), -int(item["size"]), item["network_id"]))]
-    kept.sort(key=lambda item: (-float(item["score"]), int(item["size"]), item["network_id"]))
-    return kept[:limit]
+    return sorted(
+        networks,
+        key=lambda item: (-float(item["score"]), int(item["size"]), item["network_id"]),
+    )
 
 
 def answer_is_relevant(search_ids: list[int], answers: list[list[int]]) -> bool:
     """A join is relevant only when its search ids equal one judged answer."""
     found = set(search_ids)
     return any(found == set(answer) for answer in answers)
+
+
+def answer_quality(relevant_flags: list[bool], judged: int) -> tuple[float, float | None, float | None]:
+    """Precision, recall, and F1 for one topic under the exact search-id rule.
+
+    A topic with no returned row has precision 0. A topic with no judged answer
+    is not given a recall or an F1.
+    """
+    exact = sum(1 for flag in relevant_flags if flag)
+    precision = exact / len(relevant_flags) if relevant_flags else 0.0
+    if judged <= 0:
+        return precision, None, None
+    recall = exact / judged
+    if precision + recall == 0:
+        return precision, recall, 0.0
+    return precision, recall, 2 * precision * recall / (precision + recall)
 
 
 def retrieval_metrics(labels_by_topic: list[list[int]]) -> dict[str, float]:
@@ -131,29 +138,54 @@ def joined_answers(
     graph: dict[str, set[str]],
     nodes: list[dict],
     row_ids: dict[tuple[str, str], set[int]],
-    limit: int = MAX_ANSWERS,
+    limit: int | None = None,
 ) -> list[list[int]]:
     """Run one join tree and return each row's search ids, in stable order."""
-    relations = [node["relation"] for node in nodes]
-    if len(set(relations)) != len(relations):
-        return []
-    edges = _tree_edges(relations, graph)
-    if edges is None:
-        return []
-    filters: dict[str, set[int] | None] = {}
-    for node in nodes:
-        keywords = [item["keyword"] for item in node["keywords"] if item.get("role") == "value"]
-        if not keywords:
-            filters[node["relation"]] = None
-            continue
-        shared: set[int] | None = None
-        for keyword in keywords:
-            hits = row_ids.get((node["relation"], keyword), set())
-            shared = set(hits) if shared is None else shared & hits
-        if not shared:
-            return []
-        filters[node["relation"]] = shared
-    return _execute_join(connection, schema, relations, edges, filters, limit)
+    cache = _JoinCache()
+    rows = cache.combinations(connection, schema, graph, nodes, row_ids)
+    if limit is not None:
+        rows = rows[:limit]
+    return [list(row) for row in rows]
+
+
+def _collect_answers(connection, schema, graph, ordered, row_ids, answers, limit: int = MAX_ANSWERS):
+    """Walk networks in score order and stop once `limit` distinct answers exist."""
+    cache = _JoinCache()
+    found: dict[frozenset[int], dict] = {}
+    evaluated = 0
+    for network in ordered:
+        if len(found) >= limit:
+            break
+        evaluated += 1
+        for combo in cache.combinations(connection, schema, graph, network["nodes"], row_ids):
+            if len(found) >= limit:
+                break
+            key = frozenset(combo)
+            if key in found:
+                continue
+            found[key] = {
+                "score": float(network["score"]),
+                "network_id": network["network_id"],
+                "search_ids": sorted(key),
+                "relevant": answer_is_relevant(sorted(key), answers),
+                "size": int(network["size"]),
+            }
+    ranked_rows = sorted(
+        found.values(),
+        key=lambda item: (-float(item["score"]), int(item["size"]), item["search_ids"], item["network_id"]),
+    )
+    ranked = []
+    for rank, item in enumerate(ranked_rows[:limit], start=1):
+        ranked.append(
+            {
+                "rank": rank,
+                "score": item["score"],
+                "network_id": item["network_id"],
+                "search_ids": item["search_ids"],
+                "relevant": item["relevant"],
+            }
+        )
+    return ranked, evaluated, cache.sql_ms
 
 
 def _evaluate_queries(
@@ -161,7 +193,6 @@ def _evaluate_queries(
     queries,
     topics,
     folds,
-    thresholds,
     schema,
     graph,
     connection,
@@ -196,7 +227,6 @@ def _evaluate_queries(
                         query,
                         topics.get(str(query["topic_id"])),
                         fold,
-                        thresholds[fold],
                         schema,
                         graph,
                         connection,
@@ -224,7 +254,6 @@ def _evaluate_query(
     query,
     topic,
     fold,
-    threshold,
     schema,
     graph,
     connection,
@@ -272,15 +301,13 @@ def _evaluate_query(
             }
         )
     scoring_ms = (time.perf_counter() - started) * 1000 + index_share
-    selected = select_networks(scored, threshold)
-    sql_started = time.perf_counter()
-    ranked = _rank_selected(connection, schema, graph, selected, row_ids, answers)
-    sql_ms = (time.perf_counter() - sql_started) * 1000
+    ordered = order_networks(scored)
+    ranked, evaluated, sql_ms = _collect_answers(connection, schema, graph, ordered, row_ids, answers)
     relevant = sum(1 for answer in ranked if answer["relevant"])
     emit(
         (
             f"{dataset} | icn | topic {query['topic_id']} | fold {fold} | "
-            f"networks {len(networks)} | selected {len(selected)} | "
+            f"networks {len(networks)} | evaluated {evaluated} | "
             f"answers {len(ranked)} | relevant {relevant}"
         ),
         log_path,
@@ -289,54 +316,13 @@ def _evaluate_query(
         "topic_id": str(query["topic_id"]),
         "query": query["query"],
         "fold": fold,
-        "threshold": threshold,
         "networks_scored": len(networks),
-        "networks_selected": len(selected),
+        "networks_evaluated": evaluated,
+        "judged": len(answers),
         "scoring_ms": scoring_ms,
         "sql_ms": sql_ms,
         "answers": ranked,
     }
-
-
-def _rank_selected(connection, schema, graph, selected, row_ids, answers) -> list[dict]:
-    found: dict[frozenset[int], dict] = {}
-    seen_sql: set[tuple] = set()
-    for network in selected:
-        if len(found) >= MAX_ANSWERS:
-            break
-        signature = _predicate_key(network)
-        if signature in seen_sql:
-            continue
-        seen_sql.add(signature)
-        rows = joined_answers(connection, schema, graph, network["nodes"], row_ids, MAX_ANSWERS)
-        for search_ids in rows:
-            key = frozenset(search_ids)
-            current = found.get(key)
-            if current is not None and float(current["score"]) >= float(network["score"]):
-                continue
-            found[key] = {
-                "score": float(network["score"]),
-                "network_id": network["network_id"],
-                "search_ids": sorted(key),
-                "relevant": answer_is_relevant(sorted(key), answers),
-                "size": int(network["size"]),
-            }
-    ordered = sorted(
-        found.values(),
-        key=lambda item: (-float(item["score"]), int(item["size"]), item["search_ids"], item["network_id"]),
-    )
-    ranked = []
-    for rank, item in enumerate(ordered[:MAX_ANSWERS], start=1):
-        ranked.append(
-            {
-                "rank": rank,
-                "score": item["score"],
-                "network_id": item["network_id"],
-                "search_ids": item["search_ids"],
-                "relevant": item["relevant"],
-            }
-        )
-    return ranked
 
 
 def _keyword_probability(item, relation_name, query, schema, cells, cache) -> float:
@@ -443,18 +429,153 @@ class _ScoreCache:
         )
 
 
-def _predicate_key(network: dict) -> tuple:
-    predicates = []
-    for node in network["nodes"]:
-        values = tuple(
-            sorted(
-                (str(item["keyword"]), str(item.get("attribute", "")))
-                for item in node["keywords"]
-                if item.get("role") == "value"
-            )
+class _JoinCache:
+    """Tuple sets and partial joins for one topic. A stored prefix is not fetched again."""
+
+    def __init__(self) -> None:
+        self.rows: dict[tuple, list[tuple[int, ...]]] = {}
+        self.extensions = 0
+        self.sql_ms = 0.0
+
+    def combinations(self, connection, schema, graph, nodes, row_ids) -> list[tuple[int, ...]]:
+        relations = [node["relation"] for node in nodes]
+        if len(set(relations)) != len(relations):
+            return []
+        edges = _tree_edges(relations, graph)
+        if edges is None:
+            return []
+        predicates = {node["relation"]: _value_keywords(node) for node in nodes}
+        return self._materialize(connection, schema, edges, predicates, frozenset(relations), row_ids)
+
+    def _materialize(self, connection, schema, edges, predicates, subset, row_ids) -> list[tuple[int, ...]]:
+        key = tuple(sorted((relation, predicates[relation]) for relation in subset))
+        cached = self.rows.get(key)
+        if cached is not None:
+            return cached
+        ordered = [relation for relation, _keywords in key]
+        if len(subset) == 1:
+            started = time.perf_counter()
+            identifiers = _relation_ids(connection, ordered[0], predicates[ordered[0]], row_ids)
+            if not predicates[ordered[0]]:
+                self.sql_ms += (time.perf_counter() - started) * 1000
+            stored = [(value,) for value in identifiers]
+            self.rows[key] = stored
+            return stored
+        added = _subset_leaves(subset, edges)[-1]
+        rest = subset - {added}
+        base = self._materialize(connection, schema, edges, predicates, rest, row_ids)
+        if not base:
+            self.rows[key] = []
+            return []
+        neighbor = _neighbor(added, rest, edges)
+        base_order = [relation for relation, _keywords in tuple(sorted((relation, predicates[relation]) for relation in rest))]
+        started = time.perf_counter()
+        extended = _extend_join(
+            connection,
+            schema,
+            base_order,
+            base,
+            neighbor,
+            added,
+            predicates[added],
+            row_ids,
         )
-        predicates.append((node["relation"], values))
-    return tuple(predicates)
+        self.sql_ms += (time.perf_counter() - started) * 1000
+        self.extensions += 1
+        canonical = {relation: index for index, relation in enumerate(ordered)}
+        base_index = {relation: index for index, relation in enumerate(base_order)}
+        aligned = []
+        for combo in extended:
+            row = [0] * len(ordered)
+            for relation, index in base_index.items():
+                row[canonical[relation]] = combo[index]
+            row[canonical[added]] = combo[-1]
+            aligned.append(tuple(row))
+        self.rows[key] = aligned
+        return aligned
+
+
+def _value_keywords(node: dict) -> tuple[str, ...]:
+    return tuple(sorted(str(item["keyword"]) for item in node["keywords"] if item.get("role") == "value"))
+
+
+def _relation_ids(connection, relation: str, keywords: tuple[str, ...], row_ids) -> list[int]:
+    if not keywords:
+        statement = f"SELECT {quote_ident('__search_id')} FROM {quote_ident(relation)} ORDER BY 1"
+        return [int(row[0]) for row in connection.execute(statement)]
+    shared: set[int] | None = None
+    for keyword in keywords:
+        hits = row_ids.get((relation, keyword), set())
+        shared = set(hits) if shared is None else shared & hits
+        if not shared:
+            return []
+    return sorted(shared or ())
+
+
+def _subset_leaves(subset: frozenset[str], edges: list[tuple[str, str]]) -> list[str]:
+    degree = {relation: 0 for relation in subset}
+    for left, right in edges:
+        if left in subset and right in subset:
+            degree[left] += 1
+            degree[right] += 1
+    return sorted(relation for relation, count in degree.items() if count <= 1)
+
+
+def _neighbor(relation: str, rest: frozenset[str], edges: list[tuple[str, str]]) -> str:
+    for left, right in edges:
+        if left == relation and right in rest:
+            return right
+        if right == relation and left in rest:
+            return left
+    raise ValueError(f"{relation} is not connected to the stored prefix")
+
+
+def _extend_join(connection, schema, base_order, base_rows, neighbor, added, keywords, row_ids) -> list[tuple[int, ...]]:
+    allowed = _relation_ids(connection, added, keywords, row_ids) if keywords else None
+    if allowed is not None and not allowed:
+        return []
+    connection.execute("DROP TABLE IF EXISTS semstruct_icn_partial")
+    columns = ", ".join(f"c{index} INTEGER NOT NULL" for index in range(len(base_order)))
+    connection.execute(f"CREATE TEMP TABLE semstruct_icn_partial ({columns})")
+    placeholders = ", ".join("?" for _ in base_order)
+    connection.executemany(
+        f"INSERT INTO semstruct_icn_partial VALUES ({placeholders})",
+        base_rows,
+    )
+    connection.execute("DROP TABLE IF EXISTS semstruct_icn_keep")
+    if allowed is not None:
+        connection.execute("CREATE TEMP TABLE semstruct_icn_keep (search_id INTEGER NOT NULL)")
+        connection.executemany(
+            "INSERT INTO semstruct_icn_keep (search_id) VALUES (?)",
+            ((value,) for value in allowed),
+        )
+    aliases = {neighbor: "boundary", added: "added"}
+    condition = _join_condition(schema, neighbor, added, aliases)
+    if condition is None:
+        connection.execute("DROP TABLE IF EXISTS semstruct_icn_partial")
+        connection.execute("DROP TABLE IF EXISTS semstruct_icn_keep")
+        return []
+    neighbor_index = base_order.index(neighbor)
+    selected = ", ".join(f"partial.c{index}" for index in range(len(base_order)))
+    statement = (
+        f"SELECT {selected}, added.{quote_ident('__search_id')} "
+        f"FROM semstruct_icn_partial AS partial "
+        f"JOIN {quote_ident(neighbor)} AS boundary "
+        f"ON boundary.{quote_ident('__search_id')} = partial.c{neighbor_index} "
+        f"JOIN {quote_ident(added)} AS added ON {condition}"
+    )
+    if allowed is not None:
+        statement += (
+            f" WHERE added.{quote_ident('__search_id')} IN (SELECT search_id FROM semstruct_icn_keep)"
+        )
+    order = ", ".join(
+        [f"partial.c{index}" for index in range(len(base_order))] + [f"added.{quote_ident('__search_id')}"]
+    )
+    statement += f" ORDER BY {order}"
+    rows = [tuple(int(value) for value in row) for row in connection.execute(statement)]
+    connection.execute("DROP TABLE IF EXISTS semstruct_icn_partial")
+    connection.execute("DROP TABLE IF EXISTS semstruct_icn_keep")
+    return rows
 
 
 def _tree_edges(relations: list[str], graph: dict[str, set[str]]) -> list[tuple[str, str]] | None:
@@ -469,45 +590,6 @@ def _tree_edges(relations: list[str], graph: dict[str, set[str]]) -> list[tuple[
         edges.append((parent, name))
         seen.add(name)
     return edges
-
-
-def _execute_join(connection, schema, relations, edges, filters, limit: int) -> list[list[int]]:
-    aliases = {relation: f"r{index}" for index, relation in enumerate(relations)}
-    connection.execute("DROP TABLE IF EXISTS semstruct_icn_keep")
-    connection.execute("CREATE TEMP TABLE semstruct_icn_keep (slot INTEGER NOT NULL, search_id INTEGER NOT NULL)")
-    for relation, allowed in filters.items():
-        if allowed is None:
-            continue
-        slot = relations.index(relation)
-        connection.executemany(
-            "INSERT INTO semstruct_icn_keep (slot, search_id) VALUES (?, ?)",
-            ((slot, int(search_id)) for search_id in allowed),
-        )
-    select = ", ".join(f"{aliases[relation]}.{quote_ident('__search_id')}" for relation in relations)
-    statement = f"SELECT {select} FROM {quote_ident(relations[0])} AS {aliases[relations[0]]}"
-    for parent, child in edges:
-        condition = _join_condition(schema, parent, child, aliases)
-        if condition is None:
-            connection.execute("DROP TABLE IF EXISTS semstruct_icn_keep")
-            return []
-        statement += f" JOIN {quote_ident(child)} AS {aliases[child]} ON {condition}"
-    where = []
-    for relation, allowed in filters.items():
-        if allowed is None:
-            continue
-        slot = relations.index(relation)
-        alias = aliases[relation]
-        where.append(
-            f"{alias}.{quote_ident('__search_id')} IN "
-            f"(SELECT search_id FROM semstruct_icn_keep WHERE slot = {slot})"
-        )
-    if where:
-        statement += " WHERE " + " AND ".join(where)
-    order = ", ".join(f"{aliases[relation]}.{quote_ident('__search_id')}" for relation in relations)
-    statement += f" ORDER BY {order} LIMIT {int(limit)}"
-    rows = [list(map(int, row)) for row in connection.execute(statement)]
-    connection.execute("DROP TABLE IF EXISTS semstruct_icn_keep")
-    return rows
 
 
 def _join_condition(schema: Schema, parent: str, child: str, aliases: dict[str, str]) -> str | None:
@@ -538,27 +620,36 @@ def _foreign_key(schema: Schema, source: str, target: str):
     return matches[0]
 
 
-def _fold_threshold(dataset: str, fold: int, root: Path) -> float:
-    path = fold_output_dir(dataset, fold, root) / "metrics.json"
-    if not path.is_file():
-        raise FileNotFoundError(f"No validation threshold at {path}. Run evaluate --fold {fold} first.")
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    return float(payload["finetuned_distilbert"]["threshold"])
-
-
 def _metrics(dataset: str, queries: list[dict]) -> dict:
     labels = [[1 if answer["relevant"] else 0 for answer in query["answers"]] for query in queries]
     measured = retrieval_metrics(labels)
     scoring = [float(query["scoring_ms"]) for query in queries]
     sql = [float(query["sql_ms"]) for query in queries]
+    precisions = []
+    recalls = []
+    f1_scores = []
+    for query in queries:
+        flags = [bool(answer["relevant"]) for answer in query["answers"]]
+        precision, recall, f1 = answer_quality(flags, int(query.get("judged", 0)))
+        precisions.append(precision)
+        if recall is not None and f1 is not None:
+            recalls.append(recall)
+            f1_scores.append(f1)
+    count = len(queries)
     return {
         "dataset": dataset,
-        "topics": len(queries),
+        "topics": count,
         "top1": int(measured["top1"]),
         "mrr": measured["mrr"],
         "map": measured["map"],
-        "scoring_ms": sum(scoring) / len(scoring) if scoring else 0.0,
-        "sql_ms": sum(sql) / len(sql) if sql else 0.0,
+        "precision": sum(precisions) / len(precisions) if precisions else 0.0,
+        "recall": sum(recalls) / len(recalls) if recalls else 0.0,
+        "f1": sum(f1_scores) / len(f1_scores) if f1_scores else 0.0,
+        "networks_scored": sum(int(query["networks_scored"]) for query in queries),
+        "networks_evaluated": sum(int(query["networks_evaluated"]) for query in queries),
+        "scoring_ms": sum(scoring) / count if count else 0.0,
+        "sql_ms": sum(sql) / count if count else 0.0,
+        "query_ms": sum(left + right for left, right in zip(scoring, sql)) / count if count else 0.0,
     }
 
 

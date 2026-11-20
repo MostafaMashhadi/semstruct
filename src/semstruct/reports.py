@@ -61,7 +61,7 @@ def _readme(records: dict[str, dict]) -> str:
 
 SemStruct is a semantic-structural framework for relational keyword search. A user types keywords. The system has to decide which relations, attributes, and cell values those keywords refer to, and later which joined tuples answer the query.
 
-This repository implements the offline half: one English DistilBERT ranker per database, measured with 5-fold Coffman cross-validation. The model reads one keyword, the full query, and a textual description of one element, and estimates whether that element is the intended hit. Integrated Candidate Network generation and SQL execution are specified in [docs/architecture.md](docs/architecture.md) and are not implemented here.
+This repository fine-tunes one English DistilBERT ranker per database, generates primary candidate networks, scores them with the held-out fold, and executes the joins on the SQLite benchmark. The ranker reads one keyword, the full query, and a textual description of one element. Joined-answer metrics are in [docs/icn.md](docs/icn.md).
 
 ## This version
 
@@ -77,7 +77,7 @@ For Mondial, the IMDb 2009 subset, and the Wikipedia 2008 subset:
 
 ## Ranker results
 
-Pooled over all 50 Coffman topics. These are keyword-element decisions. ICN, Key2Vec, network counts, and end-to-end time are not in this table. Wikipedia is measured beside Mondial and IMDb.
+Pooled over all 50 Coffman topics. These are keyword-element decisions. Joined-answer precision, recall, F1, the number of networks evaluated, and query time are in [Integrated candidate networks](docs/icn.md). Wikipedia is measured beside Mondial and IMDb.
 
 {_result_section(records)}
 
@@ -225,7 +225,7 @@ Seed 42 shuffles the 50 topic ids into 5 folds of 10. Fold `k` tests those 10 to
 
 {WRITER_PARAGRAPH}
 
-The cells filled here are ranker results for pre-trained DistilBERT and fine-tuned DistilBERT, plus the mean time to score one test query. ICN, Key2Vec, network counts, and end-to-end time stay with the online stage. Wikipedia is measured and kept beside the Mondial and IMDb table.
+The cells filled here are ranker results for pre-trained DistilBERT and fine-tuned DistilBERT, plus the mean time to score one test query. Joined-answer precision, recall, F1, the number of networks evaluated, and query time are in [Integrated candidate networks](icn.md). Wikipedia is measured and kept beside the Mondial and IMDb table.
 
 {_result_section(records)}
 

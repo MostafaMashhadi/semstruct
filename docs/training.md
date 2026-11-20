@@ -26,7 +26,7 @@ Seed 42 shuffles the 50 topic ids into 5 folds of 10. Fold `k` tests those 10 to
 
 The query texts are the synthetic queries plus the 50 Coffman topics. A label is positive only for the index hit the topic or the generator assigns to that keyword. Training keeps every schema hit and at most 10 other value hits per keyword, and the reported precision and recall score every index hit. The pre-trained numbers are the frozen [CLS] cosine.
 
-The cells filled here are ranker results for pre-trained DistilBERT and fine-tuned DistilBERT, plus the mean time to score one test query. ICN, Key2Vec, network counts, and end-to-end time stay with the online stage. Wikipedia is measured and kept beside the Mondial and IMDb table.
+The cells filled here are ranker results for pre-trained DistilBERT and fine-tuned DistilBERT, plus the mean time to score one test query. Joined-answer precision, recall, F1, the number of networks evaluated, and query time are in [Integrated candidate networks](icn.md). Wikipedia is measured and kept beside the Mondial and IMDb table.
 
 | Database | System | Precision | Recall | F1 | Scoring |
 | --- | --- | ---: | ---: | ---: | ---: |
