@@ -74,7 +74,15 @@ Join trees for the 50 Coffman topics on each database are written to `outputs/<d
 
 ## Integrated candidate networks
 
-The held-out fold scores those networks. The best joins run on the SQLite benchmark, and the ranked answers are compared with the Coffman judgments. Top-1, MRR, and MAP are in [Integrated candidate networks](docs/icn.md).
+The held-out fold scores those networks. The best joins run on the SQLite benchmark, and the ranked answers are compared with the Coffman judgments.
+
+| Database | Top-1 | MRR | MAP | Precision | Recall | F1 | Networks | Scoring | SQL | Total |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Mondial | 20 | 0.469 | 0.480 | 0.278 | 0.660 | 0.321 | 2,698 | 45 ms | 30 ms | 74 ms |
+| IMDb | 14 | 0.396 | 0.424 | 0.086 | 0.820 | 0.120 | 60,339 | 42.2 s | 11.7 s | 53.9 s |
+| Wikipedia | 29 | 0.685 | 0.618 | 0.085 | 0.836 | 0.133 | 1,914 | 8.6 s | 301 ms | 8.9 s |
+
+Top-1, MRR, and MAP details are in [Integrated candidate networks](docs/icn.md).
 
 ## Data
 
