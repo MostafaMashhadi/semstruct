@@ -1,0 +1,2938 @@
+{
+  "dataset": "mondial",
+  "max_answers": 10,
+  "order": "size",
+  "queries": [
+    {
+      "topic_id": "1",
+      "query": "thailand",
+      "fold": 4,
+      "networks_scored": 6,
+      "networks_evaluated": 1,
+      "judged": 1,
+      "scoring_ms": 1.822996199280169,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00001-1",
+          "search_ids": [
+            1062
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00001-1",
+          "search_ids": [
+            2675
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00001-1",
+          "search_ids": [
+            2676
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00001-1",
+          "search_ids": [
+            2677
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00001-1",
+          "search_ids": [
+            2678
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00001-1",
+          "search_ids": [
+            2679
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00001-1",
+          "search_ids": [
+            2680
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00001-1",
+          "search_ids": [
+            2681
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00001-1",
+          "search_ids": [
+            2682
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00001-1",
+          "search_ids": [
+            3298
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "2",
+      "query": "netherlands",
+      "fold": 2,
+      "networks_scored": 1,
+      "networks_evaluated": 1,
+      "judged": 1,
+      "scoring_ms": 1.8422871998154733,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00002-1",
+          "search_ids": [
+            3456
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "3",
+      "query": "georgia",
+      "fold": 2,
+      "networks_scored": 9,
+      "networks_evaluated": 5,
+      "judged": 1,
+      "scoring_ms": 1.8447042001753289,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00003-1",
+          "search_ids": [
+            906
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00003-1",
+          "search_ids": [
+            992
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00003-1",
+          "search_ids": [
+            1014
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00003-1",
+          "search_ids": [
+            2722
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00003-1",
+          "search_ids": [
+            3290
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00003-2",
+          "search_ids": [
+            3484
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00003-3",
+          "search_ids": [
+            4965
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00003-4",
+          "search_ids": [
+            5187
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00003-5",
+          "search_ids": [
+            5631
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00003-5",
+          "search_ids": [
+            6041
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "4",
+      "query": "country china",
+      "fold": 3,
+      "networks_scored": 202,
+      "networks_evaluated": 2,
+      "judged": 1,
+      "scoring_ms": 2.0519711001725227,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00004-1",
+          "search_ids": [
+            3477
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00004-2",
+          "search_ids": [
+            6063
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00004-2",
+          "search_ids": [
+            6064
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00004-2",
+          "search_ids": [
+            6065
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00004-2",
+          "search_ids": [
+            6066
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00004-2",
+          "search_ids": [
+            6067
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00004-2",
+          "search_ids": [
+            6068
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00004-2",
+          "search_ids": [
+            6069
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00004-2",
+          "search_ids": [
+            6070
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00004-2",
+          "search_ids": [
+            6071
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "5",
+      "query": "bangladesh",
+      "fold": 4,
+      "networks_scored": 4,
+      "networks_evaluated": 1,
+      "judged": 1,
+      "scoring_ms": 1.822121199893445,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00005-1",
+          "search_ids": [
+            1825
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00005-1",
+          "search_ids": [
+            1826
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00005-1",
+          "search_ids": [
+            1827
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00005-1",
+          "search_ids": [
+            1828
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00005-1",
+          "search_ids": [
+            1829
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00005-1",
+          "search_ids": [
+            1830
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00005-1",
+          "search_ids": [
+            1831
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00005-1",
+          "search_ids": [
+            1832
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00005-1",
+          "search_ids": [
+            1833
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00005-1",
+          "search_ids": [
+            1834
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "6",
+      "query": "alexandria",
+      "fold": 0,
+      "networks_scored": 3,
+      "networks_evaluated": 3,
+      "judged": 1,
+      "scoring_ms": 2.441663100671576,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00006-1",
+          "search_ids": [
+            3030
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00006-1",
+          "search_ids": [
+            3031
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00006-1",
+          "search_ids": [
+            3032
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00006-2",
+          "search_ids": [
+            14293
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00006-3",
+          "search_ids": [
+            15993
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "7",
+      "query": "sonsonate",
+      "fold": 2,
+      "networks_scored": 1,
+      "networks_evaluated": 1,
+      "judged": 1,
+      "scoring_ms": 1.8421621997731563,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00007-1",
+          "search_ids": [
+            2747
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "8",
+      "query": "xiaogan",
+      "fold": 3,
+      "networks_scored": 1,
+      "networks_evaluated": 1,
+      "judged": 1,
+      "scoring_ms": 1.9732210998881783,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00008-1",
+          "search_ids": [
+            1693
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "9",
+      "query": "city glendale",
+      "fold": 3,
+      "networks_scored": 7,
+      "networks_evaluated": 7,
+      "judged": 1,
+      "scoring_ms": 1.974387100290187,
+      "sql_ms": 1.6505430003235233,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00009-1",
+          "search_ids": [
+            838
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00009-1",
+          "search_ids": [
+            839
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "10",
+      "query": "city granada",
+      "fold": 2,
+      "networks_scored": 7,
+      "networks_evaluated": 7,
+      "judged": 1,
+      "scoring_ms": 1.8456201995832089,
+      "sql_ms": 1.5415409998240648,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00010-1",
+          "search_ids": [
+            2118
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "11",
+      "query": "Lake Kariba",
+      "fold": 1,
+      "networks_scored": 34,
+      "networks_evaluated": 34,
+      "judged": 1,
+      "scoring_ms": 3.8590492997172987,
+      "sql_ms": 35.34112199577066,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00011-1",
+          "search_ids": [
+            4889
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00011-1",
+          "search_ids": [
+            4890
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00011-3",
+          "search_ids": [
+            14084
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00011-10",
+          "search_ids": [
+            4889,
+            14084
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00011-10",
+          "search_ids": [
+            4890,
+            14084
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00011-23",
+          "search_ids": [
+            4889,
+            5321,
+            15247,
+            17011
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00011-23",
+          "search_ids": [
+            4889,
+            5491,
+            15247,
+            17083
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00011-23",
+          "search_ids": [
+            4890,
+            5501,
+            16437,
+            17087
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "12",
+      "query": "Niger",
+      "fold": 3,
+      "networks_scored": 9,
+      "networks_evaluated": 6,
+      "judged": 1,
+      "scoring_ms": 1.9737211000574462,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00012-1",
+          "search_ids": [
+            3137
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00012-2",
+          "search_ids": [
+            3395
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00012-3",
+          "search_ids": [
+            4537
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00012-3",
+          "search_ids": [
+            4538
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00012-4",
+          "search_ids": [
+            4770
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00012-5",
+          "search_ids": [
+            5004
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00012-5",
+          "search_ids": [
+            5008
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00012-6",
+          "search_ids": [
+            5044
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00012-6",
+          "search_ids": [
+            5045
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00012-6",
+          "search_ids": [
+            5046
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "13",
+      "query": "Arabian Sea",
+      "fold": 2,
+      "networks_scored": 90,
+      "networks_evaluated": 6,
+      "judged": 1,
+      "scoring_ms": 1.8645372000719362,
+      "sql_ms": 0.6678339996142313,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00013-1",
+          "search_ids": [
+            6085
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00013-1",
+          "search_ids": [
+            6086
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00013-1",
+          "search_ids": [
+            6087
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00013-1",
+          "search_ids": [
+            6088
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00013-3",
+          "search_ids": [
+            14517
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00013-3",
+          "search_ids": [
+            14518
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00013-3",
+          "search_ids": [
+            14519
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00013-4",
+          "search_ids": [
+            17114
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00013-73",
+          "search_ids": [
+            6085,
+            17114
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00013-73",
+          "search_ids": [
+            6086,
+            17114
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "14",
+      "query": "Asauad",
+      "fold": 4,
+      "networks_scored": 2,
+      "networks_evaluated": 2,
+      "judged": 1,
+      "scoring_ms": 1.821538200147188,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00014-1",
+          "search_ids": [
+            3577
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00014-2",
+          "search_ids": [
+            4541
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00014-2",
+          "search_ids": [
+            4542
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "15",
+      "query": "Sardegna",
+      "fold": 4,
+      "networks_scored": 4,
+      "networks_evaluated": 4,
+      "judged": 1,
+      "scoring_ms": 1.8217452002318169,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00015-1",
+          "search_ids": [
+            2272
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00015-1",
+          "search_ids": [
+            2273
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00015-2",
+          "search_ids": [
+            5569
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00015-3",
+          "search_ids": [
+            13887
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00015-4",
+          "search_ids": [
+            16084
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "16",
+      "query": "arab cooperation council",
+      "fold": 0,
+      "networks_scored": 12,
+      "networks_evaluated": 9,
+      "judged": 1,
+      "scoring_ms": 2.443870099614287,
+      "sql_ms": 31.42008000122587,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00016-1",
+          "search_ids": [
+            14772
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00016-4",
+          "search_ids": [
+            3517,
+            10117,
+            14689
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00016-4",
+          "search_ids": [
+            3517,
+            10121,
+            14724
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00016-5",
+          "search_ids": [
+            3309,
+            3510,
+            4275,
+            14724
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00016-6",
+          "search_ids": [
+            3390,
+            4067,
+            8298,
+            14689
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00016-6",
+          "search_ids": [
+            3391,
+            4068,
+            7994,
+            14689
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00016-6",
+          "search_ids": [
+            3394,
+            4077,
+            8122,
+            14689
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00016-6",
+          "search_ids": [
+            3395,
+            4079,
+            7810,
+            14689
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00016-12",
+          "search_ids": [
+            3517,
+            10117,
+            14689,
+            16541
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00016-12",
+          "search_ids": [
+            3517,
+            10121,
+            14724,
+            16541
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "17",
+      "query": "world labor",
+      "fold": 4,
+      "networks_scored": 1,
+      "networks_evaluated": 1,
+      "judged": 1,
+      "scoring_ms": 1.82132920008371,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00017-1",
+          "search_ids": [
+            14658
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "18",
+      "query": "islamic conference",
+      "fold": 1,
+      "networks_scored": 1,
+      "networks_evaluated": 1,
+      "judged": 1,
+      "scoring_ms": 3.8526752998222946,
+      "sql_ms": 0.0,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00018-1",
+          "search_ids": [
+            14614
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "19",
+      "query": "30 group",
+      "fold": 1,
+      "networks_scored": 2,
+      "networks_evaluated": 2,
+      "judged": 1,
+      "scoring_ms": 3.8527162998434505,
+      "sql_ms": 1.8744170001809835,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00019-1",
+          "search_ids": [
+            14721
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "20",
+      "query": "caribbean economic",
+      "fold": 2,
+      "networks_scored": 8,
+      "networks_evaluated": 6,
+      "judged": 1,
+      "scoring_ms": 1.8443711996042111,
+      "sql_ms": 20.258792997992714,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00020-1",
+          "search_ids": [
+            14696
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00020-3",
+          "search_ids": [
+            3131,
+            5810,
+            14751,
+            15538
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00020-4",
+          "search_ids": [
+            3362,
+            5808,
+            9153,
+            14696,
+            16395
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00020-4",
+          "search_ids": [
+            3388,
+            5809,
+            8201,
+            14679,
+            16368
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00020-4",
+          "search_ids": [
+            3388,
+            5809,
+            8202,
+            14696,
+            16368
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00020-4",
+          "search_ids": [
+            3388,
+            5809,
+            8229,
+            14751,
+            16368
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00020-4",
+          "search_ids": [
+            3388,
+            5810,
+            8201,
+            14679,
+            15538
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00020-4",
+          "search_ids": [
+            3388,
+            5810,
+            8202,
+            14696,
+            15538
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00020-4",
+          "search_ids": [
+            3388,
+            5810,
+            8229,
+            14751,
+            15538
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00020-4",
+          "search_ids": [
+            3388,
+            5811,
+            8201,
+            14679,
+            15302
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "21",
+      "query": "slovakia hungary",
+      "fold": 2,
+      "networks_scored": 4,
+      "networks_evaluated": 4,
+      "judged": 1,
+      "scoring_ms": 1.843163200555864,
+      "sql_ms": 3.508999999212392,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00021-2",
+          "search_ids": [
+            3259,
+            3556,
+            5138,
+            14229,
+            16972
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "22",
+      "query": "mongolia china",
+      "fold": 1,
+      "networks_scored": 47,
+      "networks_evaluated": 47,
+      "judged": 1,
+      "scoring_ms": 3.865842300183431,
+      "sql_ms": 37.218836997453764,
+      "answers": []
+    },
+    {
+      "topic_id": "23",
+      "query": "niger algeria",
+      "fold": 3,
+      "networks_scored": 117,
+      "networks_evaluated": 117,
+      "judged": 1,
+      "scoring_ms": 2.011387100083084,
+      "sql_ms": 78.7544219983829,
+      "answers": []
+    },
+    {
+      "topic_id": "24",
+      "query": "kuwait saudi arabia",
+      "fold": 1,
+      "networks_scored": 176,
+      "networks_evaluated": 118,
+      "judged": 1,
+      "scoring_ms": 3.901425299955008,
+      "sql_ms": 102.21290900335589,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00024-23",
+          "search_ids": [
+            3509,
+            10501,
+            14724
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00024-23",
+          "search_ids": [
+            3509,
+            10520,
+            14750
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00024-23",
+          "search_ids": [
+            3509,
+            10523,
+            14614
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00024-29",
+          "search_ids": [
+            5765,
+            14226,
+            17098
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00024-5",
+          "search_ids": [
+            3247,
+            5765,
+            14226,
+            17098
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00024-44",
+          "search_ids": [
+            3509,
+            10501,
+            14724,
+            16534
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00024-44",
+          "search_ids": [
+            3509,
+            10520,
+            14750,
+            16534
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00024-44",
+          "search_ids": [
+            3509,
+            10523,
+            14614,
+            16534
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00024-158",
+          "search_ids": [
+            5765,
+            14226,
+            16535,
+            17098
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00024-107",
+          "search_ids": [
+            3510,
+            5765,
+            14226,
+            16535,
+            17098
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "25",
+      "query": "lebanon syria",
+      "fold": 2,
+      "networks_scored": 46,
+      "networks_evaluated": 46,
+      "judged": 1,
+      "scoring_ms": 1.8557871998382325,
+      "sql_ms": 74.56432699927973,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00025-29",
+          "search_ids": [
+            5595,
+            14244,
+            17094
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00025-5",
+          "search_ids": [
+            3311,
+            5595,
+            14244,
+            17094
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00025-42",
+          "search_ids": [
+            5595,
+            14244,
+            16536,
+            17094
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00025-14",
+          "search_ids": [
+            3311,
+            3512,
+            5595,
+            14244,
+            17094
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00025-19",
+          "search_ids": [
+            3511,
+            5595,
+            14244,
+            16536,
+            17094
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "26",
+      "query": "cameroon economy",
+      "fold": 0,
+      "networks_scored": 2,
+      "networks_evaluated": 2,
+      "judged": 1,
+      "scoring_ms": 2.4409960999946634,
+      "sql_ms": 0.689291000526282,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00026-1",
+          "search_ids": [
+            3415,
+            3723
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00026-2",
+          "search_ids": [
+            3415,
+            3723,
+            4124
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "27",
+      "query": "nigeria gdp",
+      "fold": 1,
+      "networks_scored": 0,
+      "networks_evaluated": 0,
+      "judged": 1,
+      "scoring_ms": 3.8520493000760325,
+      "sql_ms": 0.0,
+      "answers": []
+    },
+    {
+      "topic_id": "28",
+      "query": "mongolia republic",
+      "fold": 3,
+      "networks_scored": 56,
+      "networks_evaluated": 56,
+      "judged": 1,
+      "scoring_ms": 1.9850961002703116,
+      "sql_ms": 62.51091300146072,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00028-30",
+          "search_ids": [
+            3500,
+            14950
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00028-13",
+          "search_ids": [
+            3302,
+            3500,
+            14950
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00028-56",
+          "search_ids": [
+            3500,
+            14950,
+            16527
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00028-46",
+          "search_ids": [
+            3500,
+            5381,
+            14950,
+            16527
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "29",
+      "query": "kiribati politics",
+      "fold": 1,
+      "networks_scored": 6,
+      "networks_evaluated": 6,
+      "judged": 1,
+      "scoring_ms": 3.8540922998436145,
+      "sql_ms": 5.946373999904608,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00029-2",
+          "search_ids": [
+            3366,
+            14805
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00029-1",
+          "search_ids": [
+            3343,
+            3366,
+            14805
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00029-6",
+          "search_ids": [
+            3366,
+            14805,
+            16398
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00029-3",
+          "search_ids": [
+            3366,
+            4581,
+            14805,
+            16398
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00029-4",
+          "search_ids": [
+            3366,
+            5895,
+            14805,
+            16398
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00029-5",
+          "search_ids": [
+            3366,
+            4581,
+            13877,
+            14805,
+            16398
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "30",
+      "query": "poland language",
+      "fold": 3,
+      "networks_scored": 1,
+      "networks_evaluated": 1,
+      "judged": 1,
+      "scoring_ms": 1.9731791003323451,
+      "sql_ms": 0.10525000016059494,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00030-1",
+          "search_ids": [
+            3451,
+            14186
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "31",
+      "query": "spain galician",
+      "fold": 0,
+      "networks_scored": 4,
+      "networks_evaluated": 4,
+      "judged": 1,
+      "scoring_ms": 2.4411621000581363,
+      "sql_ms": 4.181706999588641,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00031-2",
+          "search_ids": [
+            3552,
+            14175
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "32",
+      "query": "uzbekistan eastern orthodox",
+      "fold": 0,
+      "networks_scored": 9,
+      "networks_evaluated": 9,
+      "judged": 1,
+      "scoring_ms": 2.441662100227404,
+      "sql_ms": 7.2028329987006146,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00032-1",
+          "search_ids": [
+            3482,
+            16765
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "33",
+      "query": "haiti religion",
+      "fold": 2,
+      "networks_scored": 8,
+      "networks_evaluated": 5,
+      "judged": 1,
+      "scoring_ms": 1.844579200133012,
+      "sql_ms": 4.2886669989457005,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00033-2",
+          "search_ids": [
+            3538,
+            16572
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00033-2",
+          "search_ids": [
+            3538,
+            16573
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00033-1",
+          "search_ids": [
+            3331,
+            3538,
+            16572
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00033-1",
+          "search_ids": [
+            3331,
+            3538,
+            16573
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00033-8",
+          "search_ids": [
+            3538,
+            16389,
+            16572
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00033-8",
+          "search_ids": [
+            3538,
+            16389,
+            16573
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00033-3",
+          "search_ids": [
+            3538,
+            4678,
+            16389,
+            16572
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00033-3",
+          "search_ids": [
+            3538,
+            4678,
+            16389,
+            16573
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00033-4",
+          "search_ids": [
+            3538,
+            5655,
+            16389,
+            16572
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00033-4",
+          "search_ids": [
+            3538,
+            5655,
+            16389,
+            16573
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "34",
+      "query": "suriname ethnic_group",
+      "fold": 2,
+      "networks_scored": 0,
+      "networks_evaluated": 0,
+      "judged": 1,
+      "scoring_ms": 1.8419961997096834,
+      "sql_ms": 0.0,
+      "answers": []
+    },
+    {
+      "topic_id": "35",
+      "query": "slovakia german",
+      "fold": 1,
+      "networks_scored": 8,
+      "networks_evaluated": 8,
+      "judged": 1,
+      "scoring_ms": 3.8534253000761964,
+      "sql_ms": 4.063416001372389,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00035-3",
+          "search_ids": [
+            3445,
+            4387
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00035-1",
+          "search_ids": [
+            3262,
+            3445,
+            4387
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00035-6",
+          "search_ids": [
+            3445,
+            4387,
+            16493
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00035-5",
+          "search_ids": [
+            3445,
+            4387,
+            5138,
+            16493
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "36",
+      "query": "poland cape verde organization",
+      "fold": 3,
+      "networks_scored": 50,
+      "networks_evaluated": 50,
+      "judged": 26,
+      "scoring_ms": 1.9914291001441597,
+      "sql_ms": 11.41087499763671,
+      "answers": []
+    },
+    {
+      "topic_id": "37",
+      "query": "saint kitts cambodia",
+      "fold": 1,
+      "networks_scored": 321,
+      "networks_evaluated": 321,
+      "judged": 15,
+      "scoring_ms": 3.9513832991360687,
+      "sql_ms": 100.09021300538734,
+      "answers": []
+    },
+    {
+      "topic_id": "38",
+      "query": "marshall islands grenadines organization",
+      "fold": 4,
+      "networks_scored": 313,
+      "networks_evaluated": 313,
+      "judged": 9,
+      "scoring_ms": 1.9094541999038483,
+      "sql_ms": 103.22374600582407,
+      "answers": []
+    },
+    {
+      "topic_id": "39",
+      "query": "czech republic cote divoire organization",
+      "fold": 0,
+      "networks_scored": 616,
+      "networks_evaluated": 616,
+      "judged": 26,
+      "scoring_ms": 2.6792870997269347,
+      "sql_ms": 73.2144179946772,
+      "answers": []
+    },
+    {
+      "topic_id": "40",
+      "query": "panama oman",
+      "fold": 4,
+      "networks_scored": 29,
+      "networks_evaluated": 29,
+      "judged": 23,
+      "scoring_ms": 1.8264541999997164,
+      "sql_ms": 29.079129999445286,
+      "answers": []
+    },
+    {
+      "topic_id": "41",
+      "query": "iceland mali",
+      "fold": 4,
+      "networks_scored": 86,
+      "networks_evaluated": 86,
+      "judged": 23,
+      "scoring_ms": 1.8591211996863422,
+      "sql_ms": 68.17816699822288,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00041-60",
+          "search_ids": [
+            5044,
+            5606,
+            16957,
+            17095
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00041-60",
+          "search_ids": [
+            5057,
+            5606,
+            16960,
+            17095
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "42",
+      "query": "guyana sierra leone",
+      "fold": 4,
+      "networks_scored": 201,
+      "networks_evaluated": 187,
+      "judged": 31,
+      "scoring_ms": 1.8806621997100592,
+      "sql_ms": 119.63662399648456,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00042-35",
+          "search_ids": [
+            5685,
+            14286,
+            17095
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00042-31",
+          "search_ids": [
+            5723,
+            14261,
+            17095
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00042-5",
+          "search_ids": [
+            3129,
+            5723,
+            14261,
+            17095
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00042-3",
+          "search_ids": [
+            3169,
+            5685,
+            14286,
+            17095
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00042-45",
+          "search_ids": [
+            5685,
+            14286,
+            16417,
+            17095
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00042-179",
+          "search_ids": [
+            5723,
+            14261,
+            16456,
+            17095
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00042-14",
+          "search_ids": [
+            3129,
+            3386,
+            5723,
+            14261,
+            17095
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00042-114",
+          "search_ids": [
+            3169,
+            3433,
+            5685,
+            14286,
+            17095
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00042-23",
+          "search_ids": [
+            3386,
+            5685,
+            14286,
+            16417,
+            17095
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00042-112",
+          "search_ids": [
+            3433,
+            5723,
+            14261,
+            16456,
+            17095
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "43",
+      "query": "mauritius india",
+      "fold": 4,
+      "networks_scored": 22,
+      "networks_evaluated": 15,
+      "judged": 35,
+      "scoring_ms": 1.8259961993862817,
+      "sql_ms": 31.115415996282536,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00043-10",
+          "search_ids": [
+            3489,
+            5925,
+            14477,
+            15782,
+            17102
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00043-10",
+          "search_ids": [
+            3489,
+            5926,
+            14477,
+            15786,
+            17102
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00043-10",
+          "search_ids": [
+            3489,
+            5927,
+            14477,
+            15787,
+            17102
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00043-10",
+          "search_ids": [
+            3489,
+            5928,
+            14477,
+            15791,
+            17102
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00043-10",
+          "search_ids": [
+            3489,
+            5929,
+            14477,
+            15792,
+            17102
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00043-10",
+          "search_ids": [
+            3489,
+            5930,
+            14477,
+            15794,
+            17102
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00043-10",
+          "search_ids": [
+            3489,
+            5931,
+            14477,
+            15799,
+            17102
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00043-10",
+          "search_ids": [
+            3489,
+            5932,
+            14477,
+            15803,
+            17102
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00043-10",
+          "search_ids": [
+            3489,
+            5933,
+            14477,
+            15806,
+            17102
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00043-10",
+          "search_ids": [
+            3489,
+            5934,
+            14477,
+            15807,
+            17102
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "44",
+      "query": "vanuatu afghanistan",
+      "fold": 0,
+      "networks_scored": 26,
+      "networks_evaluated": 26,
+      "judged": 22,
+      "scoring_ms": 2.4467871001434105,
+      "sql_ms": 18.712124002377095,
+      "answers": []
+    },
+    {
+      "topic_id": "45",
+      "query": "libya australia",
+      "fold": 3,
+      "networks_scored": 103,
+      "networks_evaluated": 103,
+      "judged": 28,
+      "scoring_ms": 2.0021370996801124,
+      "sql_ms": 94.65678600008687,
+      "answers": []
+    },
+    {
+      "topic_id": "46",
+      "query": "hutu africa",
+      "fold": 0,
+      "networks_scored": 11,
+      "networks_evaluated": 11,
+      "judged": 1,
+      "scoring_ms": 2.444537099381705,
+      "sql_ms": 9.072337000361586,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00046-4",
+          "search_ids": [
+            3413,
+            3804,
+            4119
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00046-2",
+          "search_ids": [
+            3360,
+            3413,
+            3804,
+            4119
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00046-10",
+          "search_ids": [
+            3413,
+            4119,
+            7084,
+            14694
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "47",
+      "query": "serb europe",
+      "fold": 0,
+      "networks_scored": 4,
+      "networks_evaluated": 2,
+      "judged": 6,
+      "scoring_ms": 2.4414950997197593,
+      "sql_ms": 0.8532069996363134,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00047-2",
+          "search_ids": [
+            3446,
+            3848,
+            4395
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00047-2",
+          "search_ids": [
+            3457,
+            3860,
+            4429
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00047-2",
+          "search_ids": [
+            3458,
+            3861,
+            4432
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00047-2",
+          "search_ids": [
+            3460,
+            3863,
+            4443
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00047-2",
+          "search_ids": [
+            3548,
+            3836,
+            4353
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00047-2",
+          "search_ids": [
+            3556,
+            3844,
+            4379
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00047-1",
+          "search_ids": [
+            3357,
+            3446,
+            3848,
+            4395
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00047-1",
+          "search_ids": [
+            3357,
+            3457,
+            3860,
+            4429
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00047-1",
+          "search_ids": [
+            3357,
+            3458,
+            3861,
+            4432
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00047-1",
+          "search_ids": [
+            3357,
+            3460,
+            3863,
+            4443
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "48",
+      "query": "uzbek asia",
+      "fold": 1,
+      "networks_scored": 8,
+      "networks_evaluated": 3,
+      "judged": 6,
+      "scoring_ms": 3.8545923000128823,
+      "sql_ms": 0.8372909996978706,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00048-3",
+          "search_ids": [
+            3476,
+            3880,
+            4480
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00048-3",
+          "search_ids": [
+            3480,
+            3884,
+            4493
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00048-3",
+          "search_ids": [
+            3481,
+            3885,
+            4495
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00048-4",
+          "search_ids": [
+            3481,
+            3885,
+            14224
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00048-3",
+          "search_ids": [
+            3482,
+            3886,
+            4183
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00048-4",
+          "search_ids": [
+            3482,
+            3886,
+            14118
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00048-3",
+          "search_ids": [
+            3497,
+            3901,
+            4242
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00048-3",
+          "search_ids": [
+            3499,
+            3903,
+            4247
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00048-1",
+          "search_ids": [
+            3358,
+            3476,
+            3880,
+            4480
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00048-1",
+          "search_ids": [
+            3358,
+            3480,
+            3884,
+            4493
+          ],
+          "relevant": true
+        }
+      ]
+    },
+    {
+      "topic_id": "49",
+      "query": "rhein germany",
+      "fold": 3,
+      "networks_scored": 10,
+      "networks_evaluated": 4,
+      "judged": 4,
+      "scoring_ms": 1.9750951000787609,
+      "sql_ms": 4.6791660015514935,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00049-2",
+          "search_ids": [
+            3555,
+            5235,
+            16238
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00049-2",
+          "search_ids": [
+            3555,
+            5236,
+            16242
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00049-2",
+          "search_ids": [
+            3555,
+            5237,
+            16245
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00049-2",
+          "search_ids": [
+            3555,
+            5238,
+            16246
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00049-8",
+          "search_ids": [
+            3555,
+            5235,
+            16238,
+            16987
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00049-8",
+          "search_ids": [
+            3555,
+            5236,
+            16242,
+            16987
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00049-8",
+          "search_ids": [
+            3555,
+            5237,
+            16245,
+            16987
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00049-8",
+          "search_ids": [
+            3555,
+            5238,
+            16246,
+            16987
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00049-8",
+          "search_ids": [
+            3555,
+            5249,
+            16242,
+            16989
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00049-8",
+          "search_ids": [
+            3555,
+            5250,
+            16239,
+            16989
+          ],
+          "relevant": false
+        }
+      ]
+    },
+    {
+      "topic_id": "50",
+      "query": "egypt nile",
+      "fold": 0,
+      "networks_scored": 10,
+      "networks_evaluated": 4,
+      "judged": 5,
+      "scoring_ms": 2.4441201006084157,
+      "sql_ms": 4.924752000988519,
+      "answers": [
+        {
+          "rank": 1,
+          "score": 0.0,
+          "network_id": "t00050-2",
+          "search_ids": [
+            3504,
+            5195,
+            15351
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 2,
+          "score": 0.0,
+          "network_id": "t00050-2",
+          "search_ids": [
+            3504,
+            5196,
+            15352
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 3,
+          "score": 0.0,
+          "network_id": "t00050-2",
+          "search_ids": [
+            3504,
+            5197,
+            15168
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 4,
+          "score": 0.0,
+          "network_id": "t00050-2",
+          "search_ids": [
+            3504,
+            5198,
+            15169
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 5,
+          "score": 0.0,
+          "network_id": "t00050-2",
+          "search_ids": [
+            3504,
+            5199,
+            15174
+          ],
+          "relevant": false
+        },
+        {
+          "rank": 6,
+          "score": 0.0,
+          "network_id": "t00050-8",
+          "search_ids": [
+            3504,
+            5195,
+            15351,
+            16981
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 7,
+          "score": 0.0,
+          "network_id": "t00050-8",
+          "search_ids": [
+            3504,
+            5196,
+            15352,
+            16981
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 8,
+          "score": 0.0,
+          "network_id": "t00050-8",
+          "search_ids": [
+            3504,
+            5197,
+            15168,
+            16981
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 9,
+          "score": 0.0,
+          "network_id": "t00050-8",
+          "search_ids": [
+            3504,
+            5198,
+            15169,
+            16981
+          ],
+          "relevant": true
+        },
+        {
+          "rank": 10,
+          "score": 0.0,
+          "network_id": "t00050-8",
+          "search_ids": [
+            3504,
+            5199,
+            15174,
+            16981
+          ],
+          "relevant": true
+        }
+      ]
+    }
+  ]
+}

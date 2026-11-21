@@ -116,3 +116,14 @@ def test_answer_quality_uses_exact_matches():
     assert f1 == 0.5
     assert answer_quality([], 1) == (0.0, 0.0, 0.0)
     assert answer_quality([True], 0) == (1.0, None, None)
+
+
+def test_zero_scores_order_by_size_then_id():
+    ordered = order_networks(
+        [
+            _network(0.0, 3, "c"),
+            _network(0.0, 1, "b"),
+            _network(0.0, 1, "a"),
+        ]
+    )
+    assert [item["network_id"] for item in ordered] == ["a", "b", "c"]

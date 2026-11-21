@@ -26,10 +26,27 @@ from semstruct.ranker.scoring import relevance_probabilities
 from semstruct.runlog import emit
 
 MAX_ANSWERS = 1000
+ORDERS = ("semantic", "size")
 
 
-def evaluate_dataset(dataset: str, root: Path | None = None, config: dict | None = None) -> dict:
-    """Score, join, and measure one database. The ranker weights are not updated."""
+def evaluate_dataset(
+    dataset: str,
+    root: Path | None = None,
+    config: dict | None = None,
+    k: int = MAX_ANSWERS,
+    order: str = "semantic",
+    tag: str = "",
+) -> dict:
+    """Score, join, and measure one database. The ranker weights are not updated.
+
+    k: stop after this many distinct answers per topic.
+    order: network ordering, either "semantic" (model score) or "size" (smallest first).
+    tag: optional suffix for the output folder name, used to repeat a run.
+    """
+    if order not in ORDERS:
+        raise ValueError(f"order must be one of {ORDERS}, got {order!r}")
+    if k < 1:
+        raise ValueError("k must be at least 1")
     root = root or project_root()
     config = config or load_config(dataset, root=root)
     directory = processed_dir(dataset, root)
@@ -40,7 +57,7 @@ def evaluate_dataset(dataset: str, root: Path | None = None, config: dict | None
     folds = assign_topic_folds(topic_ids, int(config["seed"]), int(config.get("n_folds", 5)))
     graph = schema_graph(schema)
     connection = sqlite3.connect(directory / "database.sqlite")
-    destination = icn_dir(dataset, root)
+    destination = icn_dir(dataset, root) / f"{order}-k{k}{'-' + tag if tag else ''}"
     destination.mkdir(parents=True, exist_ok=True)
     log_path = destination / "run.log"
     try:
@@ -55,6 +72,8 @@ def evaluate_dataset(dataset: str, root: Path | None = None, config: dict | None
             config,
             log_path,
             root,
+            k,
+            order,
         )
     finally:
         connection.close()
@@ -62,7 +81,8 @@ def evaluate_dataset(dataset: str, root: Path | None = None, config: dict | None
     metrics = _metrics(dataset, queries)
     payload = {
         "dataset": dataset,
-        "max_answers": MAX_ANSWERS,
+        "max_answers": k,
+        "order": order,
         "queries": queries,
     }
     (destination / "results.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -199,8 +219,9 @@ def _evaluate_queries(
     config,
     log_path,
     root,
+    k,
+    order,
 ) -> list[dict]:
-    from semstruct.ranker.classifier import load_ranker
 
     by_fold: dict[int, list[dict]] = {}
     for query in queries:
@@ -210,11 +231,18 @@ def _evaluate_queries(
     max_length = int(config["max_length"])
     max_chars = int(config["max_value_chars"])
     for fold in sorted(by_fold):
-        checkpoint = fold_model_dir(dataset, fold, root)
-        tokenizer, model = load_ranker(str(checkpoint))
-        device = select_device()
-        model.to(device)
-        model.eval()
+        if order == "semantic":
+            from semstruct.ranker.classifier import load_ranker
+
+            checkpoint = fold_model_dir(dataset, fold, root)
+            tokenizer, model = load_ranker(str(checkpoint))
+            device = select_device()
+            model.to(device)
+            model.eval()
+        else:
+            tokenizer = None
+            model = None
+            device = None
         fold_networks = [network for query in by_fold[fold] for network in query.get("networks", [])]
         index_started = time.perf_counter()
         cells, row_ids = _value_index(connection, schema, fold_networks, max_chars)
@@ -241,11 +269,14 @@ def _evaluate_queries(
                         log_path,
                         dataset,
                         index_share,
+                        k,
+                        order,
                     )
                 )
         finally:
-            del model
-            release_device_cache()
+            if model is not None:
+                del model
+                release_device_cache()
     records.sort(key=lambda item: int(item["topic_id"]))
     return records
 
@@ -268,10 +299,72 @@ def _evaluate_query(
     log_path,
     dataset,
     index_share,
+    k,
+    order,
 ) -> dict:
     answers = list(topic.answers) if topic is not None else []
     networks = query.get("networks", [])
     started = time.perf_counter()
+    if order == "size":
+        scored = [
+            {
+                "network_id": network["network_id"],
+                "nodes": network["nodes"],
+                "score": 0.0,
+                "size": len(network["nodes"]),
+            }
+            for network in networks
+        ]
+    else:
+        scored = _score_networks(
+            networks,
+            query,
+            schema,
+            cells,
+            cache,
+            tokenizer,
+            model,
+            device,
+            batch_size,
+            max_length,
+        )
+    scoring_ms = (time.perf_counter() - started) * 1000 + index_share
+    ordered = order_networks(scored)
+    ranked, evaluated, sql_ms = _collect_answers(connection, schema, graph, ordered, row_ids, answers, limit=k)
+    relevant = sum(1 for answer in ranked if answer["relevant"])
+    emit(
+        (
+            f"{dataset} | icn | topic {query['topic_id']} | fold {fold} | "
+            f"networks {len(networks)} | evaluated {evaluated} | "
+            f"answers {len(ranked)} | relevant {relevant}"
+        ),
+        log_path,
+    )
+    return {
+        "topic_id": str(query["topic_id"]),
+        "query": query["query"],
+        "fold": fold,
+        "networks_scored": len(networks),
+        "networks_evaluated": evaluated,
+        "judged": len(answers),
+        "scoring_ms": scoring_ms,
+        "sql_ms": sql_ms,
+        "answers": ranked,
+    }
+
+
+def _score_networks(
+    networks,
+    query,
+    schema,
+    cells,
+    cache,
+    tokenizer,
+    model,
+    device,
+    batch_size,
+    max_length,
+):
     assignments: dict[tuple, float] = {}
     for network in networks:
         for node in network["nodes"]:
@@ -300,29 +393,7 @@ def _evaluate_query(
                 "size": len(network["nodes"]),
             }
         )
-    scoring_ms = (time.perf_counter() - started) * 1000 + index_share
-    ordered = order_networks(scored)
-    ranked, evaluated, sql_ms = _collect_answers(connection, schema, graph, ordered, row_ids, answers)
-    relevant = sum(1 for answer in ranked if answer["relevant"])
-    emit(
-        (
-            f"{dataset} | icn | topic {query['topic_id']} | fold {fold} | "
-            f"networks {len(networks)} | evaluated {evaluated} | "
-            f"answers {len(ranked)} | relevant {relevant}"
-        ),
-        log_path,
-    )
-    return {
-        "topic_id": str(query["topic_id"]),
-        "query": query["query"],
-        "fold": fold,
-        "networks_scored": len(networks),
-        "networks_evaluated": evaluated,
-        "judged": len(answers),
-        "scoring_ms": scoring_ms,
-        "sql_ms": sql_ms,
-        "answers": ranked,
-    }
+    return scored
 
 
 def _keyword_probability(item, relation_name, query, schema, cells, cache) -> float:

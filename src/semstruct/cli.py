@@ -50,6 +50,9 @@ def main(argv: list[str] | None = None) -> None:
 
     icn = subparsers.add_parser("icn", help="Score primary networks, join them, and measure Coffman retrieval")
     _add_dataset(icn)
+    icn.add_argument("--k", type=int, default=1000, help="Stop after k distinct answers.")
+    icn.add_argument("--order", choices=("semantic", "size"), default="semantic", help="Network ordering: semantic uses model score, size uses smallest first.")
+    icn.add_argument("--tag", default="", help="Suffix for the output folder, for repeated runs.")
 
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -98,7 +101,7 @@ def main(argv: list[str] | None = None) -> None:
         from semstruct.networks.icn import evaluate_dataset
 
         for dataset in datasets:
-            evaluate_dataset(dataset)
+            evaluate_dataset(dataset, k=args.k, order=args.order, tag=args.tag)
         return
     raise SystemExit(f"Unknown command {args.command}")
 
